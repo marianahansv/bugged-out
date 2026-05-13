@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ChannelList from './ChannelList';
 import ChannelForm from './ChannelForm';
+import { apiUrl } from './api';
 
 function ChannelView({ onChannelClick }) {
     const [showAddChannelForm, setShowAddChannelForm] = useState(false);
     const [channels, setChannels] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedChannelId, setSelectedChannelId] = useState(null); // Add local state
+    const [selectedChannelId, setSelectedChannelId] = useState(null);
+    const [error, setError] = useState('');
 
     const fetchChannels = useCallback(() => {
         setLoading(true);
-        fetch('http://localhost:5000/getallchannels')
+        setError('');
+        fetch(apiUrl('/getallchannels'))
             .then((response) => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -23,6 +26,7 @@ function ChannelView({ onChannelClick }) {
             })
             .catch((error) => {
                 console.error('Error fetching channels:', error);
+                setError('We could not load channels right now.');
                 setLoading(false);
             });
     }, []);
@@ -34,7 +38,7 @@ function ChannelView({ onChannelClick }) {
     const handleAddChannel = (channelName) => {
         if (channelName.trim() === '') return;
 
-        fetch('http://localhost:5000/addchannel', {
+        fetch(apiUrl('/addchannel'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channel_name: channelName }),
@@ -54,26 +58,31 @@ function ChannelView({ onChannelClick }) {
     };
 
     const handleChannelClick = (channelId) => {
-        setSelectedChannelId(channelId); // Update local state for styling
-        onChannelClick(channelId); // Call the onChannelClick prop to update state in App.js
+        setSelectedChannelId(channelId);
+        onChannelClick(channelId);
     };
 
     return (
-        <aside style={{ width: '300px', backgroundColor: '#f8f9fa', padding: '10px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <h2>Channels</h2>
-                <button onClick={() => setShowAddChannelForm(true)}>+</button>
+        <aside className="sidebar">
+            <div className="section-header">
+                <div>
+                    <h2 className="section-title">Channels</h2>
+                    <p className="helper-text sidebar-copy">Pick a topic lane before starting a thread.</p>
+                </div>
+                <button className="ghost-button" onClick={() => setShowAddChannelForm(true)}>+</button>
             </div>
 
             {showAddChannelForm && <ChannelForm onSubmit={handleAddChannel} />}
 
-            {loading ? (
+            {error ? (
+                <div className="error-text">{error}</div>
+            ) : loading ? (
                 <div>Loading channels...</div>
             ) : (
                 <ChannelList
                     channels={channels}
-                    onChannelClick={handleChannelClick} // Use the local handleChannelClick
-                    selectedChannelId={selectedChannelId} // Pass local state for styling
+                    onChannelClick={handleChannelClick}
+                    selectedChannelId={selectedChannelId}
                 />
             )}
         </aside>

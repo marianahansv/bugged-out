@@ -1,7 +1,8 @@
 // RegistrationForm.js
 import React, { useState } from 'react';
+import { apiUrl } from './api';
 
-function RegistrationForm({ onRegistrationSuccess }) {
+function RegistrationForm({ onRegistrationSuccess, onCancel }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [display_name, setDisplayName] = useState('');
@@ -11,7 +12,7 @@ function RegistrationForm({ onRegistrationSuccess }) {
     event.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:5000/register', {
+      const response = await fetch(apiUrl('/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, display_name }),
@@ -31,23 +32,29 @@ function RegistrationForm({ onRegistrationSuccess }) {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px' }}>
-      <h2>Register</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+    <div className="form-card auth-modal">
+      <div className="form-header">
+        <h2 className="form-title">Create Account</h2>
+        <button className="ghost-button" type="button" onClick={onCancel}>Close</button>
+      </div>
+      <p className="form-copy">
+        Create an account if you want a persistent identity for your posts and access to voting.
+      </p>
+      {error && <p className="error-text">{error}</p>}
+      <form className="form-stack" onSubmit={handleSubmit}>
+        <div className="form-field">
+          <label>Username</label>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+        <div className="form-field">
+          <label>Password</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Display Name:</label>
-          <input type="text" value={display_name} onChange={(e) => setDisplayName(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+        <div className="form-field">
+          <label>Display Name</label>
+          <input type="text" value={display_name} onChange={(e) => setDisplayName(e.target.value)} required />
         </div>
-        <button type="submit" style={{ padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Register</button>
+        <button className="primary-button" type="submit">Create Account</button>
       </form>
     </div>
   );

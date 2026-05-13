@@ -1,165 +1,217 @@
-require('dotenv').config();
 const mysql = require('mysql2/promise');
-const { hashPassword } = require('./server');
+const { dbConfig } = require('./config');
+const { hashPassword } = require('./auth');
+
+const demoUsers = [
+  ['guest_demo', 'Guest Demo'],
+  ['mentor_demo', 'Mentor Demo'],
+  ['maintainer_demo', 'Maintainer Demo'],
+];
+
+const forumSeed = [
+  {
+    channel: 'JavaScript',
+    author: 'guest_demo',
+    title: 'Async/Await Confusion',
+    content: 'I understand promises at a basic level, but I still get lost when chaining asynchronous API calls. What is the cleanest mental model for async/await in real projects?',
+    replies: [
+      ['mentor_demo', 'Treat async functions as promise factories. `await` pauses inside the function, but the outer function still returns a promise.'],
+      ['maintainer_demo', 'A good practice is to keep one async boundary per task, then move parsing and transformation into plain synchronous helpers.'],
+    ],
+  },
+  {
+    channel: 'JavaScript',
+    author: 'mentor_demo',
+    title: 'When should I debounce search input?',
+    content: 'I am building a search field for forum posts. Should I debounce at the component level or at the API request layer?',
+    replies: [
+      ['guest_demo', 'Debounce in the UI for responsiveness, but still guard the API so rapid requests do not create unnecessary load.'],
+    ],
+  },
+  {
+    channel: 'Python',
+    author: 'guest_demo',
+    title: 'Virtual Environments',
+    content: 'Why should I use virtual environments for small scripts if I am only working alone on my machine?',
+    replies: [
+      ['mentor_demo', 'They keep dependencies reproducible and prevent one project from breaking another six months later.'],
+    ],
+  },
+  {
+    channel: 'Python',
+    author: 'maintainer_demo',
+    title: 'How do you structure a Flask app after it grows past one file?',
+    content: 'I keep starting with a single app file, then it turns into a mess. What is a practical folder structure once routes and services start growing?',
+    replies: [
+      ['guest_demo', 'Move routes, config, templates, and database helpers into separate modules early. Even a tiny blueprint split helps a lot.'],
+    ],
+  },
+  {
+    channel: 'CSS',
+    author: 'mentor_demo',
+    title: 'Centering a Div',
+    content: 'What is the simplest modern way to center content both horizontally and vertically without hacks?',
+    replies: [
+      ['guest_demo', 'Flexbox or grid. I use `display: grid; place-items: center;` when it is a single-child layout.'],
+    ],
+  },
+  {
+    channel: 'CSS',
+    author: 'guest_demo',
+    title: 'How do you keep a minimalist UI from feeling unfinished?',
+    content: 'I like clean interfaces, but my layouts sometimes end up looking empty instead of intentional. What details matter most?',
+    replies: [
+      ['maintainer_demo', 'Typography, spacing rhythm, and a clear surface hierarchy do most of the work. Minimal does not mean unstyled.'],
+    ],
+  },
+  {
+    channel: 'React',
+    author: 'guest_demo',
+    title: 'State lives in too many components',
+    content: 'My forum UI works, but I am lifting state and passing callbacks through several layers. When do you decide to centralize state?',
+    replies: [
+      ['mentor_demo', 'If several sibling components depend on the same fetch lifecycle, move that logic into a shared hook or parent container.'],
+    ],
+  },
+  {
+    channel: 'React',
+    author: 'maintainer_demo',
+    title: 'How do you decide what belongs in a custom hook?',
+    content: 'I understand custom hooks conceptually, but I do not know when extracting one is actually worth it.',
+    replies: [
+      ['guest_demo', 'When you see repeated fetch, loading, and error logic across screens, that is usually the moment.'],
+    ],
+  },
+  {
+    channel: 'SQL',
+    author: 'mentor_demo',
+    title: 'When should I use a relational database for a forum?',
+    content: 'If a project has channels, posts, replies, and user-owned votes, is a relational schema still the best fit?',
+    replies: [
+      ['maintainer_demo', 'Yes. Forums have strongly related entities, and SQL makes ownership, joins, and aggregation straightforward.'],
+    ],
+  },
+  {
+    channel: 'SQL',
+    author: 'guest_demo',
+    title: 'How should I seed realistic demo data?',
+    content: 'I want a portfolio project to feel alive when someone opens it. What makes seed data feel intentional instead of random?',
+    replies: [
+      ['mentor_demo', 'Use a coherent set of channels, distinct voices, and questions that show different user journeys like search, replies, and voting.'],
+    ],
+  },
+  {
+    channel: 'Java',
+    author: 'maintainer_demo',
+    title: 'Garbage Collection',
+    content: 'How do you explain garbage collection to beginners without oversimplifying it too much?',
+    replies: [
+      ['guest_demo', 'I describe it as automatic memory reclamation for objects your program can no longer reach, then explain that timing is not guaranteed.'],
+    ],
+  },
+  {
+    channel: 'C++',
+    author: 'mentor_demo',
+    title: 'Memory Management',
+    content: 'What is the best modern advice for managing memory in C++ without teaching raw `new` and `delete` first?',
+    replies: [
+      ['guest_demo', 'Lead with ownership and smart pointers. Raw allocation should feel like an exception, not the default.'],
+    ],
+  },
+  {
+    channel: 'Godot',
+    author: 'guest_demo',
+    title: 'Moving a Character',
+    content: 'How do I structure character movement in Godot so input, velocity, and animation do not get tangled together?',
+    replies: [
+      ['mentor_demo', 'Split it into input capture, movement calculation, and animation state updates. That keeps each step easier to test mentally.'],
+    ],
+  },
+  {
+    channel: 'Prolog',
+    author: 'mentor_demo',
+    title: 'Unification',
+    content: 'Can someone explain unification in Prolog with a practical beginner-friendly example?',
+    replies: [
+      ['guest_demo', 'Think of it as pattern matching with variable binding. A query succeeds when Prolog can make both sides match consistently.'],
+    ],
+  },
+  {
+    channel: 'Architecture',
+    author: 'maintainer_demo',
+    title: 'How much architecture is enough for a portfolio project?',
+    content: 'I want my codebase to look thoughtful, but I do not want to over-engineer a small app. Where is the line?',
+    replies: [
+      ['mentor_demo', 'Separate the obvious concerns: config, persistence, routes, and presentation. That is usually enough to show mature judgment.'],
+    ],
+  },
+];
 
 async function seedDatabase() {
-    const pool = mysql.createPool({
-        host: process.env.MYSQL_HOST,
-        user: process.env.MYSQL_USER,
-        password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DATABASE,
-    });
+  const pool = mysql.createPool({ ...dbConfig });
+  let connection = null;
 
-    let connection = null; // Declare connection outside try
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
 
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+    await connection.execute('DELETE FROM ratings');
+    await connection.execute('DELETE FROM replies');
+    await connection.execute('DELETE FROM questions');
+    await connection.execute('DELETE FROM channels');
+    await connection.execute(
+      `DELETE FROM users WHERE username IN (${demoUsers.map(() => '?').join(', ')})`,
+      demoUsers.map(([username]) => username)
+    );
 
-        // Delete data (correct order)
-        try {
-            await connection.execute("DELETE FROM replies");
-            console.log("Deleted all existing replies.");
-
-            await connection.execute("DELETE FROM ratings");
-            console.log("Deleted all existing ratings.");
-
-            await connection.execute("DELETE FROM questions");
-            console.log("Deleted all existing questions.");
-
-            await connection.execute("DELETE FROM channels");
-            console.log("Deleted all existing channels.");
-        } catch (deleteError) {
-            await connection.rollback();
-            throw deleteError;
-        }
-
-        // Insert channels
-        const channels = ['C++', 'CSS', 'Godot', 'Java', 'JavaScript', 'Prolog', 'Python'];
-        const channelIds = {};
-
-        for (const channelName of channels) {
-            try {
-                const [result] = await connection.execute(
-                    "INSERT INTO channels (channel_name) VALUES (?)",
-                    [channelName]
-                );
-                channelIds[channelName] = result.insertId;
-            } catch (insertChannelError) {
-                await connection.rollback();
-                throw insertChannelError;
-            }
-        }
-
-        // Insert questions and capture their IDs
-        const questionIds = {}; // To store question IDs
-        try {
-            const [jsResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['JavaScript'], 1, 'Async/Await Confusion', 'I\'m having trouble understanding async/await in JavaScript.']
-            );
-            questionIds['Async/Await Confusion'] = jsResult.insertId;
-
-            const [cppResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['C++'], 2, 'Memory Management', 'What are the best practices for memory management in C++?']
-            );
-            questionIds['Memory Management'] = cppResult.insertId;
-
-            const [pythonResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['Python'], 1, 'Virtual Environments', 'Why should I use virtual environments in Python?']
-            );
-            questionIds['Virtual Environments'] = pythonResult.insertId;
-
-            const [cssResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['CSS'], 2, 'Centering a Div', 'What is the best way to center a div both horizontally and vertically?']
-            );
-            questionIds['Centering a Div'] = cssResult.insertId;
-
-            const [godotResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['Godot'], 1, 'Moving a Character', 'How do I properly move a character in Godot?']
-            );
-            questionIds['Moving a Character'] = godotResult.insertId;
-
-            const [javaResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['Java'], 2, 'Garbage Collection', 'How does garbage collection work in Java?']
-            );
-            questionIds['Garbage Collection'] = javaResult.insertId;
-
-            const [prologResult] = await connection.execute(
-                "INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)",
-                [channelIds['Prolog'], 1, 'Unification', 'Can someone explain unification in Prolog with a simple example?']
-            );
-            questionIds['Unification'] = prologResult.insertId;
-
-        } catch (insertQuestionError) {
-            await connection.rollback();
-            throw insertQuestionError;
-        }
-
-        // Insert replies using questionIds
-        try {
-            if (questionIds['Async/Await Confusion']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Async/Await Confusion'], 2, 'Async/await makes asynchronous code look and behave more like synchronous code.']
-                );
-            }
-
-            if (questionIds['Memory Management']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Memory Management'], 1, 'Use smart pointers to manage memory automatically.']
-                );
-            }
-            if (questionIds['Virtual Environments']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Virtual Environments'], 2, 'They help you isolate project dependencies.']
-                );
-            }
-            if (questionIds['Centering a Div']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Centering a Div'], 1, 'Flexbox or Grid are the modern ways to do it.']
-                );
-            }
-            if (questionIds['Moving a Character']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Moving a Character'], 2, 'Use the move_and_slide method.']
-                );
-            }
-            if (questionIds['Garbage Collection']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Garbage Collection'], 1, 'Java automatically manages memory by reclaiming unused objects.']
-                );
-            }
-            if (questionIds['Unification']) {
-                await connection.execute(
-                    "INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)",
-                    [questionIds['Unification'], 2, 'It\'s a matching process between terms.']
-                );
-            }
-        } catch (insertReplyError) {
-            await connection.rollback();
-            throw insertReplyError;
-        }
-
-        await connection.commit();
-        console.log('Database seeded with channels, questions, and replies!');
-    } catch (error) {
-        await connection.rollback();
-        console.error('Error seeding database:', error);
-    } finally {
-        if (connection) connection.release();
-        if (pool) pool.end();
+    const userIds = {};
+    for (const [username, displayName] of demoUsers) {
+      const { salt, hash } = hashPassword('password123');
+      const [result] = await connection.execute(
+        'INSERT INTO users (username, password, display_name) VALUES (?, ?, ?)',
+        [username, `${salt}:${hash}`, displayName]
+      );
+      userIds[username] = result.insertId;
     }
+
+    const uniqueChannels = [...new Set(forumSeed.map((entry) => entry.channel))];
+    const channelIds = {};
+
+    for (const channelName of uniqueChannels) {
+      const [result] = await connection.execute(
+        'INSERT INTO channels (channel_name) VALUES (?)',
+        [channelName]
+      );
+      channelIds[channelName] = result.insertId;
+    }
+
+    for (const thread of forumSeed) {
+      const [questionResult] = await connection.execute(
+        'INSERT INTO questions (channel_id, user_id, title, content) VALUES (?, ?, ?, ?)',
+        [channelIds[thread.channel], userIds[thread.author], thread.title, thread.content]
+      );
+
+      for (const [replyAuthor, replyContent] of thread.replies) {
+        await connection.execute(
+          'INSERT INTO replies (question_id, user_id, content) VALUES (?, ?, ?)',
+          [questionResult.insertId, userIds[replyAuthor], replyContent]
+        );
+      }
+    }
+
+    await connection.commit();
+    console.log(`Seeded ${uniqueChannels.length} channels and ${forumSeed.length} questions.`);
+  } catch (error) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error('Error seeding database:', error);
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+    await pool.end();
+  }
 }
 
 seedDatabase();

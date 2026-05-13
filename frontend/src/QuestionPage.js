@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import ReplyForm from './ReplyForm';
 import { formatDistanceToNow } from 'date-fns';
+import { apiUrl } from './api';
+
+function buildReplyTree(replyItems) {
+  const replyMap = new Map(
+    replyItems.map((reply) => [reply.id, { ...reply, children: [] }])
+  );
+  const roots = [];
+
+  replyMap.forEach((reply) => {
+    if (reply.parent_reply_id && replyMap.has(reply.parent_reply_id)) {
+      replyMap.get(reply.parent_reply_id).children.push(reply);
+      return;
+    }
+
+    roots.push(reply);
+  });
+
+  return roots;
+}
 
 function QuestionPage({ questionId }) {
   const [question, setQuestion] = useState(null);
@@ -8,24 +27,41 @@ function QuestionPage({ questionId }) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [questionRating, setQuestionRating] = useState(0); 
-  const [userRating, setUserRating] = useState(0); 
+  const [pageError, setPageError] = useState('');
 
   useEffect(() => {
     if (questionId) {
-      // Fetch the question and replies from the server
-      fetch(`http://localhost:5000/getquestions/${questionId}`)
-        .then(response => response.json())
+      setPageError('');
+      fetch(apiUrl(`/getquestions/${questionId}`))
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to load question');
+          }
+          return response.json();
+        })
         .then(data => setQuestion(data))
-        .catch(error => console.error('Error fetching question:', error));
+        .catch(error => {
+          console.error('Error fetching question:', error);
+          setPageError('We could not load this question.');
+        });
   
-      fetch(`http://localhost:5000/getreplies?questionId=${questionId}`)
-        .then(response => response.json())
+      fetch(apiUrl(`/getreplies?questionId=${questionId}`))
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to load replies');
+          }
+          return response.json();
+        })
         .then(data => setReplies(data))
         .catch(error => console.error('Error fetching replies:', error));
   
-      // Fetch question rating
-      fetch(`http://localhost:5000/get_question_rating?question_id=${questionId}`)
-        .then(response => response.json())
+      fetch(apiUrl(`/get_question_rating?question_id=${questionId}`))
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('Failed to load rating');
+          }
+          return response.json();
+        })
         .then(data => setQuestionRating(data.total_rating))
         .catch(error => console.error('Error fetching question rating:', error));
     }
@@ -34,12 +70,15 @@ function QuestionPage({ questionId }) {
   const handleRateQuestion = async (rating) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/rate_question', {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const response = await fetch(apiUrl('/rate_question'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           question_id: questionId,
           rating: rating,
@@ -47,36 +86,36 @@ function QuestionPage({ questionId }) {
       });
   
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
   
-      const data = await response.json();
-      console.log(data.message);
-  
-      // Optimistically update the UI
+      await response.json();
       setQuestionRating(prevRating => prevRating + rating);
-      setUserRating(rating); // Store the user's current rating
   
-      // Re-fetch the rating to ensure consistency with the server
-      fetch(`http://localhost:5000/get_question_rating?question_id=${questionId}`)
+      fetch(apiUrl(`/get_question_rating?question_id=${questionId}`))
         .then(response => response.json())
         .then(data => setQuestionRating(data.total_rating))
         .catch(error => console.error('Error fetching question rating:', error));
   
     } catch (error) {
       console.error('Error rating question:', error);
+      setPageError(error.message);
     }
   };
 
   const handleReplySubmit = async (content, parentReplyId = null) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/addreply', {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      const response = await fetch(apiUrl('/addreply'), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           question_id: questionId,
           content: content,
@@ -85,7 +124,8 @@ function QuestionPage({ questionId }) {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
@@ -95,64 +135,92 @@ function QuestionPage({ questionId }) {
 
     } catch (error) {
       console.error('Error submitting reply:', error);
+      setPageError(error.message);
     }
   };
+
+  const replyTree = buildReplyTree(replies);
+
+  const renderReplies = (items, depth = 0) =>
+    items.map((reply) => (
+      <div
+        key={reply.id}
+        className={`reply-card ${depth > 0 ? 'is-nested' : ''}`}
+        style={{ marginLeft: depth === 0 ? 0 : `${Math.min(depth, 4) * 14}px` }}
+      >
+        <div className="reply-meta-row">
+          <div className="meta-text">
+            {reply.author} - {formatDistanceToNow(new Date(reply.timestamp), { addSuffix: true })}
+          </div>
+          <button
+            className="ghost-button reply-link"
+            onClick={() => {
+              setShowReplyForm(true);
+              setReplyingTo(reply.id);
+            }}
+          >
+            Reply
+          </button>
+        </div>
+        <p className="detail-content reply-content">{reply.content}</p>
+        {showReplyForm && replyingTo === reply.id && (
+          <ReplyForm onSubmit={handleReplySubmit} parentReplyId={reply.id} />
+        )}
+        {reply.children.length > 0 ? renderReplies(reply.children, depth + 1) : null}
+      </div>
+    ));
+
+  if (pageError && !question) {
+    return <div className="error-text">{pageError}</div>;
+  }
 
   if (!question) {
     return <div>Loading...</div>;
   }
 
   return (
-    <div>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>
+    <div className="detail-view">
+      {pageError && <p className="error-text">{pageError}</p>}
+      <div className="detail-head">
+        <span className="question-tag">question</span>
+      </div>
+      <h2 className="detail-title">
         {question.title}
       </h2>
-      <div style={{ fontSize: '14px', color: '#888', marginBottom: '10px' }}>
+      <div className="meta-text">
         Asked {formatDistanceToNow(new Date(question.timestamp), { addSuffix: true })} by {question.author}
       </div>
       {question.image_url && (
-        <img src={`http://localhost:5000${question.image_url}`} alt={question.title} style={{ maxWidth: '100%', marginBottom: '10px' }} />
+        <img className="detail-image" src={apiUrl(question.image_url)} alt={question.title} />
       )}
-      <p style={{ fontSize: '16px', lineHeight: '1.6', marginBottom: '20px' }}>
+      <p className="detail-content">
         {question.content}
       </p>
 
-      {/* Rating Display and Buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-        <button onClick={() => handleRateQuestion(1)} style={{ fontSize: '20px', padding: '5px 10px', marginRight: '5px' }}>
+      <div className="vote-row">
+        <button onClick={() => handleRateQuestion(1)}>
           👍
         </button>
-        <button onClick={() => handleRateQuestion(-1)} style={{ fontSize: '20px', padding: '5px 10px', marginRight: '10px' }}>
+        <button onClick={() => handleRateQuestion(-1)}>
           👎
         </button>
-        <span style={{ fontSize: '16px' }}>Rating: {questionRating}</span>
+        <span className="vote-chip">Rating: {questionRating}</span>
       </div>
+      <p className="muted-note">
+        Voting is optional-auth only. Guests can still read, ask, and reply.
+      </p>
 
-      <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
+      <h3 className="section-title">
         {replies.length} Answers
       </h3>
-      {replies.map((reply) => (
-        <div
-          key={reply.id}
-          style={{
-            borderLeft: reply.parent_reply_id ? '4px solid #ccc' : 'none',
-            paddingLeft: reply.parent_reply_id ? '10px' : '0',
-            marginBottom: '10px',
-          }}
-        >
-          <p style={{ fontSize: '14px', lineHeight: '1.4' }}>{reply.content}</p>
-          <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>
-            {reply.author} - {formatDistanceToNow(new Date(reply.timestamp), { addSuffix: true })}
-          </div>
-          <button onClick={() => { setShowReplyForm(true); setReplyingTo(reply.id); }} style={{ padding: '5px 10px', fontSize: '12px', marginTop: '5px' }}>Reply</button>
-          {showReplyForm && replyingTo === reply.id && <ReplyForm onSubmit={handleReplySubmit} parentReplyId={reply.id} />}
-        </div>
-      ))}
+      <div className="reply-list threaded-replies">
+        {renderReplies(replyTree)}
+      </div>
 
-      <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '10px' }}>
+      <h3 className="section-title">
         Your Answer
       </h3>
-      <button onClick={() => { setShowReplyForm(true); setReplyingTo(null); }} style={{ padding: '8px 16px', fontSize: '14px' }}>Answer Question</button>
+      <button className="primary-button" onClick={() => { setShowReplyForm(true); setReplyingTo(null); }}>Answer Question</button>
       {showReplyForm && replyingTo === null && <ReplyForm onSubmit={handleReplySubmit} />}
     </div>
   );

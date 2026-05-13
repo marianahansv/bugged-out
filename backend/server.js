@@ -1,130 +1,41 @@
 const express = require('express');
-const mysql = require('mysql2/promise'); // Change the require
 const cors = require('cors');
 const multer = require('multer');
 const path = require('path');
-const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { hashPassword, verifyPassword } = require('./auth');
+const { port, jwtSecret } = require('./config');
+const { initializeDatabase, getPool } = require('./db');
+const { createTables } = require('./schema');
+const {
+  createChannel,
+  createQuestion,
+  createReply,
+  getQuestionById,
+  listChannels,
+  listQuestions,
+  listReplies,
+  searchQuestions,
+} = require('./repositories/forumRepository');
 
 const app = express();
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-const port = 5000;
 
-const JWT_SECRET = 'CMPT353'; 
-
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
-  return { salt: salt, hash: hash };
-}
-
-function verifyPassword(password, storedSalt, storedHash) {
-  const hash = crypto.pbkdf2Sync(password, storedSalt, 1000, 64, 'sha512').toString('hex');
-  return hash === storedHash;
-}
-
-// **IMPORTANT CHANGE:** Create a connection pool for efficiency
-const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
-
-// Function to create tables (using promises)
-async function createTables() {
+async function startServer() {
   try {
-    const connection = await pool.getConnection(); // Get a connection from the pool
-
-    // Table creation queries (same as before)
-    const createUsersTable = `
-      CREATE TABLE IF NOT EXISTS users (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        username VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        display_name VARCHAR(255) NOT NULL,
-        avatar_url VARCHAR(255) NULL,
-        is_admin BOOLEAN DEFAULT FALSE
-      );
-    `;
-
-    const createChannelsTable = `
-      CREATE TABLE IF NOT EXISTS channels (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        channel_name VARCHAR(255) UNIQUE NOT NULL
-      );
-    `;
-
-    const createQuestionsTable = `
-      CREATE TABLE IF NOT EXISTS questions (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        channel_id INT,
-        user_id INT,
-        title VARCHAR(255) NOT NULL,
-        content TEXT NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        image_url VARCHAR(255) NULL,
-        FOREIGN KEY (channel_id) REFERENCES channels(id),
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      );
-    `;
-
-    const createRepliesTable = `
-      CREATE TABLE IF NOT EXISTS replies (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        question_id INT,
-        user_id INT,
-        content TEXT NOT NULL,
-        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        image_url VARCHAR(255) NULL,
-        parent_reply_id INT NULL,
-        is_accepted BOOLEAN DEFAULT FALSE,
-        FOREIGN KEY (question_id) REFERENCES questions(id),
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (parent_reply_id) REFERENCES replies(id)
-      );
-    `;
-
-    const createRatingsTable = `
-      CREATE TABLE IF NOT EXISTS ratings (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        user_id INT,
-        type ENUM('question', 'reply') NOT NULL,
-        question_id INT NULL,
-        reply_id INT NULL,
-        rating INT NOT NULL,
-        UNIQUE KEY unique_rating (user_id, type, question_id, reply_id),
-        FOREIGN KEY (user_id) REFERENCES users(id),
-        FOREIGN KEY (question_id) REFERENCES questions(id),
-        FOREIGN KEY (reply_id) REFERENCES replies(id)
-      );
-    `;
-
-    await connection.execute(createUsersTable);
-    console.log('Users table created or already exists.');
-    await connection.execute(createChannelsTable);
-    console.log('Channels table created or already exists.');
-    await connection.execute(createQuestionsTable);
-    console.log('Questions table created or already exists.');
-    await connection.execute(createRepliesTable);
-    console.log('Replies table created or already exists.');
-    await connection.execute(createRatingsTable);
-    console.log('Ratings table created or already exists.');
-
-    connection.release(); // Release the connection back to the pool
+    const pool = await initializeDatabase();
+    await createTables(pool);
+    app.listen(port, () => {
+      console.log(`Server listening at http://localhost:${port}`);
+    });
   } catch (error) {
-    console.error('Error creating tables:', error);
+    console.error('Failed to start server:', error);
+    process.exit(1);
   }
 }
-
-// Call createTables to ensure tables exist
-createTables();
 
 //multer setup to support file uploads
 const storage = multer.diskStorage({
@@ -138,25 +49,22 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // authentication middleware (NOW USING JWT - SECURE)
-const authenticateToken = (req, res, next) => {
+const attachUserIfPresent = (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader && authHeader.split(' ')[1]; // "Bearer <token>"
 
-  console.log('--- authenticateToken ---');
-  console.log('Token:', token);
-
   if (!token) {
-    return res.status(401).json({ error: 'Unauthorized - Token missing' });
+    req.user = null;
+    return next();
   }
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, jwtSecret, (err, decoded) => {
     if (err) {
-      console.error('Token verification error:', err);
-      return res.status(403).json({ error: 'Unauthorized - Invalid token' });
+      req.user = null;
+      return next();
     }
 
-    req.user = decoded; // Store the *decoded* user info in req.user
-    console.log('Authenticated user:', decoded);
+    req.user = decoded;
     next();
   });
 };
@@ -167,18 +75,14 @@ const authenticateToken = (req, res, next) => {
 app.post('/addchannel', async (req, res) => {
   try {
     const { channel_name } = req.body;
-    if (!channel_name) {
+    const normalizedName = channel_name?.trim();
+
+    if (!normalizedName) {
       return res.status(400).json({ error: 'Channel name is required' });
     }
 
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
-      'INSERT INTO channels (channel_name) VALUES (?)',
-      [channel_name]
-    );
-    connection.release();
-
-    res.json({ message: 'Channel created successfully', channelId: results.insertId });
+    const channelId = await createChannel(getPool(), normalizedName);
+    res.json({ message: 'Channel created successfully', channelId });
   } catch (err) {
     console.error('Error creating channel:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -188,10 +92,7 @@ app.post('/addchannel', async (req, res) => {
 //get all channels
 app.get('/getallchannels', async (req, res) => {
   try {
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute('SELECT * FROM channels');
-    connection.release();
-
+    const results = await listChannels(getPool());
     res.json(results);
   } catch (err) {
     console.error('Error retrieving channels:', err);
@@ -201,23 +102,23 @@ app.get('/getallchannels', async (req, res) => {
 
 //========questions endpoints==========================================================
 //create a new question in the forum
-app.post('/addquestion', authenticateToken, upload.single('image'), async (req, res) => {
+app.post('/addquestion', attachUserIfPresent, upload.single('image'), async (req, res) => {
   try {
     const { channel_id, title, content } = req.body;
     const image_url = req.file ? `/uploads/${req.file.filename}` : null;
-    const user_id = req.user.id;
+    const user_id = req.user?.id ?? null;
 
     if (!channel_id || !title || !content) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const connection = await pool.getConnection();
-    await connection.execute(
-      "INSERT INTO questions (channel_id, user_id, title, content, image_url) VALUES (?, ?, ?, ?, ?)",
-      [channel_id, user_id, title, content, image_url]
-    );
-    connection.release();
-
+    await createQuestion(getPool(), {
+      channelId: channel_id,
+      userId: user_id,
+      title,
+      content,
+      imageUrl: image_url,
+    });
     res.json({ message: "Question added successfully" });
   } catch (err) {
     console.error("Add question error:", err);
@@ -228,18 +129,13 @@ app.post('/addquestion', authenticateToken, upload.single('image'), async (req, 
 app.get('/getquestions/:questionId', async (req, res) => {
   try {
     const { questionId } = req.params;
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
-      'SELECT * FROM questions WHERE id = ?',
-      [questionId]
-    );
-    connection.release();
+    const question = await getQuestionById(getPool(), questionId);
 
-    if (results.length === 0) {
+    if (!question) {
       return res.status(404).json({ error: 'Question not found' });
     }
 
-    res.json(results[0]); // Send back a single question object
+    res.json(question);
   } catch (err) {
     console.error('Error retrieving question:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -251,18 +147,7 @@ app.get('/getquestions', async (req, res) => {
   try {
     const channelId = req.query.channelId;
 
-    let query = 'SELECT * FROM questions';
-    let params = [];
-
-    if (channelId) {
-      query += ' WHERE channel_id = ?';
-      params.push(channelId);
-    }
-
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(query, params);
-    connection.release();
-
+    const results = await listQuestions(getPool(), channelId);
     res.json(results);
   } catch (err) {
     console.error('Error retrieving questions:', err);
@@ -272,33 +157,27 @@ app.get('/getquestions', async (req, res) => {
 
 //========replies endpoints==========================================================
 //create a reply to a question
-app.post('/addreply', authenticateToken, async (req, res) => {
+app.post('/addreply', attachUserIfPresent, async (req, res) => {
   try {
     const { question_id, content, parent_reply_id } = req.body;
-    const user_id = req.user.id;
+    const user_id = req.user?.id ?? null;
 
     if (!question_id || !content) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
-      'INSERT INTO replies (question_id, user_id, content, parent_reply_id) VALUES (?, ?, ?, ?)',
-      [question_id, user_id, content, parent_reply_id]
-    );
+    const newReply = await createReply(getPool(), {
+      questionId: question_id,
+      userId: user_id,
+      content,
+      parentReplyId: parent_reply_id,
+    });
 
-    const [newReplyResult] = await connection.execute(
-      'SELECT r.*, u.display_name as author FROM replies r JOIN users u ON r.user_id = u.id WHERE r.id = ?',
-      [results.insertId]
-    );
-
-    connection.release();
-
-    if (newReplyResult.length === 0) {
+    if (!newReply) {
       return res.status(500).json({ error: 'Failed to retrieve new reply data' });
     }
 
-    res.json(newReplyResult[0]);  // Send back the new reply data
+    res.json(newReply);
 
   } catch (err) {
     console.error('Error creating reply:', err);
@@ -315,13 +194,7 @@ app.get('/getreplies', async (req, res) => {
       return res.status(400).json({ error: 'Question ID is required' });
     }
 
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
-      'SELECT * FROM replies WHERE question_id = ?',
-      [questionId]
-    );
-    connection.release();
-
+    const results = await listReplies(getPool(), questionId);
     res.json(results);
   } catch (err) {
     console.error('Error retrieving replies:', err);
@@ -332,19 +205,26 @@ app.get('/getreplies', async (req, res) => {
 //========user registration endpoints=========================================
 app.post('/register', async (req, res) => {
   const { username, password, display_name } = req.body;
+  const normalizedUsername = username?.trim();
+  const normalizedDisplayName = display_name?.trim();
 
   try {
-    const { salt, hash } = hashPassword(password); // Hash the password
-    const connection = await pool.getConnection();
-    await connection.execute(
+    if (!normalizedUsername || !normalizedDisplayName || !password) {
+      return res.status(400).json({ error: 'Username, display name, and password are required.' });
+    }
+
+    const { salt, hash } = hashPassword(password);
+    await getPool().execute(
       'INSERT INTO users (username, password, display_name) VALUES (?, ?, ?)',
-      [username, `${salt}:${hash}`, display_name]
+      [normalizedUsername, `${salt}:${hash}`, normalizedDisplayName]
     );
-    connection.release();
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Error registering user:', error);
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'That username is already taken.' });
+    }
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -353,14 +233,12 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
+    const [results] = await getPool().execute(
       'SELECT * FROM users WHERE username = ?',
       [username]
     );
 
     if (results.length === 0) {
-      connection.release();
       return res.status(401).json({ error: 'Invalid username or password' });
     }
 
@@ -370,14 +248,12 @@ app.post('/login', async (req, res) => {
 
     if (passwordMatch) {
       // Generate a JWT
-      const token = jwt.sign({ id: user.id, username: user.username, display_name: user.display_name }, JWT_SECRET, {
+      const token = jwt.sign({ id: user.id, username: user.username, display_name: user.display_name }, jwtSecret, {
         expiresIn: '1h',
       });
       const { id, username, display_name, avatar_url, is_admin } = user;
-      connection.release();
       res.json({ message: 'Login successful', user: { id, username, display_name, avatar_url, is_admin }, token: token });
     } else {
-      connection.release();
       return res.status(401).json({ error: 'Invalid username or password' });
     }
   } catch (error) {
@@ -387,16 +263,20 @@ app.post('/login', async (req, res) => {
 });
 
 //========ratings endpoints==========================================================
-app.post('/rate_question', authenticateToken, async (req, res) => {
+app.post('/rate_question', attachUserIfPresent, async (req, res) => {
   try {
     const { question_id, rating } = req.body;
-    const user_id = req.user.id;
+    const user_id = req.user?.id ?? null;
 
     if (!question_id || !rating || (rating !== 1 && rating !== -1)) {
       return res.status(400).json({ error: 'Invalid rating data' });
     }
 
-    const connection = await pool.getConnection();
+    if (user_id === null) {
+      return res.status(401).json({ error: 'Please log in to rate questions.' });
+    }
+
+    const connection = await getPool().getConnection();
     const [existingRating] = await connection.execute(
       'SELECT * FROM ratings WHERE user_id = ? AND question_id = ? AND type = ?',
       [user_id, question_id, 'question']
@@ -433,7 +313,7 @@ app.get('/get_question_rating', async (req, res) => {
       return res.status(400).json({ error: 'Question ID is required' });
     }
 
-    const connection = await pool.getConnection();
+    const connection = await getPool().getConnection();
     const [results] = await connection.execute(
       'SELECT SUM(rating) AS total_rating FROM ratings WHERE question_id = ? AND type = ?',
       [question_id, 'question']
@@ -448,16 +328,20 @@ app.get('/get_question_rating', async (req, res) => {
   }
 });
 // rate a reply (upvote or downvote)
-app.post('/rate_reply', authenticateToken, async (req, res) => {
+app.post('/rate_reply', attachUserIfPresent, async (req, res) => {
   try {
     const { reply_id, rating } = req.body;
-    const user_id = req.user.id;
+    const user_id = req.user?.id ?? null;
 
     if (!reply_id || !rating || (rating !== 1 && rating !== -1)) {
       return res.status(400).json({ error: 'Invalid rating data' });
     }
 
-    const connection = await pool.getConnection();
+    if (user_id === null) {
+      return res.status(401).json({ error: 'Please log in to rate replies.' });
+    }
+
+    const connection = await getPool().getConnection();
     const [results] = await connection.execute(
       'SELECT * FROM ratings WHERE user_id = ? AND reply_id = ?',
       [user_id, reply_id]
@@ -495,7 +379,7 @@ app.get('/get_reply_rating', async (req, res) => {
       return res.status(400).json({ error: 'Reply ID is required' });
     }
 
-    const connection = await pool.getConnection();
+    const connection = await getPool().getConnection();
     const [results] = await connection.execute(
       'SELECT SUM(rating) AS total_rating FROM ratings WHERE reply_id = ?',
       [reply_id]
@@ -518,13 +402,7 @@ app.get('/searchquestions', async (req, res) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    const connection = await pool.getConnection();
-    const [results] = await connection.execute(
-      'SELECT * FROM questions WHERE title LIKE ? OR content LIKE ?',
-      [`%${query}%`, `%${query}%`] // Using LIKE for partial matches
-    );
-    connection.release();
-
+    const results = await searchQuestions(getPool(), query);
     res.json(results);
   } catch (err) {
     console.error('Error searching questions:', err);
@@ -536,6 +414,4 @@ app.get('/', (req, res) => {
   res.send('Hello from the backend!');
 });
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
-});
+startServer();

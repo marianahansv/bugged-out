@@ -1,57 +1,61 @@
 import React, { useState } from 'react';
+import { apiUrl } from './api';
 
 function QuestionForm({ onQuestionCreated, channelId }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [image, setImage] = useState(null);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setError('');
 
     try {
         const formData = new FormData();
         formData.append('channel_id', channelId); 
         formData.append('title', title);
         formData.append('content', content);
-        //formData.append('user_id', localStorage.getItem('user_id'));  // INSECURE - REMOVE THIS LINE
         if (image) {
             formData.append('image', image);
         }
 
-        const token = localStorage.getItem('token'); // Get the token
-        console.log('FormData being sent:', formData);  // Add this line
+        const token = localStorage.getItem('token');
+        const headers = {};
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
 
-        const response = await fetch('http://localhost:5000/addquestion', {
+        const response = await fetch(apiUrl('/addquestion'), {
             method: 'POST',
             body: formData,
-            headers: {
-                'Authorization': `Bearer ${token}`, // Include the token
-            },
+            headers,
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || `HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        console.log('Question created:', data);
+        await response.json();
         setTitle('');
         setContent('');
         setImage(null);
         onQuestionCreated();
     } catch (error) {
         console.error('Error creating question:', error);
+        setError(error.message);
     }
-};
+  };
 
   return (
-    <div>
-      <h2 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '10px' }}>
-        Ask a Question
-      </h2>
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '10px' }}>
-          <label htmlFor="title" style={{ fontWeight: 'bold', display: 'block' }}>
+    <div className="form-card">
+      <h2 className="form-title">Ask a Question</h2>
+      <p className="form-copy">Use the selected channel to keep the discussion organized and easy to review.</p>
+      <form className="form-stack" onSubmit={handleSubmit}>
+        {error && <p className="error-text">{error}</p>}
+        <div className="form-field">
+          <label htmlFor="title">
             Title
           </label>
           <input
@@ -59,24 +63,25 @@ function QuestionForm({ onQuestionCreated, channelId }) {
             id="title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{ width: '100%', padding: '8px', fontSize: '16px' }}
             required
+            disabled={!channelId}
           />
         </div>
-        <div style={{ marginBottom: '20px' }}>
-          <label htmlFor="content" style={{ fontWeight: 'bold', display: 'block' }}>
+        <div className="form-field">
+          <label htmlFor="content">
             Content
           </label>
           <textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            style={{ width: '100%', padding: '8px', fontSize: '16px', minHeight: '100px' }}
+            style={{ minHeight: '120px' }}
             required
+            disabled={!channelId}
           />
         </div>
-        <div style={{ marginBottom: '20px' }}>
-          <label htmlFor="image" style={{ fontWeight: 'bold', display: 'block' }}>
+        <div className="form-field">
+          <label htmlFor="image">
             Image (optional)
           </label>
           <input
@@ -84,10 +89,9 @@ function QuestionForm({ onQuestionCreated, channelId }) {
             id="image"
             accept="image/*"
             onChange={(e) => setImage(e.target.files[0])}
-            style={{ width: '100%', padding: '8px', fontSize: '16px' }}
           />
         </div>
-        <button type="submit" style={{ padding: '10px 20px', fontSize: '16px' }}>
+        <button className="primary-button" type="submit" disabled={!channelId}>
           Post Question
         </button>
       </form>

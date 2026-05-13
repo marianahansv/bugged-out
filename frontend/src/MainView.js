@@ -2,23 +2,28 @@ import React, { useState, useEffect, useCallback} from 'react';
 import QuestionsList from './QuestionsList';
 import QuestionPage from './QuestionPage';
 import QuestionForm from './QuestionForm';
+import { apiUrl } from './api';
 
 function MainView({ selectedChannelId }) {
-  const [activeView, setActiveView] = useState('questions'); // 'questions' | 'question' | 'askQuestionForm'
+  const [activeView, setActiveView] = useState('questions');
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState(''); 
   const [searchResults, setSearchResults] = useState([]); 
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
 
   const fetchQuestions = useCallback(() => {
-    let url = 'http://localhost:5000/getquestions';
+    setLoading(true);
+    setError('');
+    let url = apiUrl('/getquestions');
     if (selectedChannelId) {
       url += `?channelId=${selectedChannelId}`;
     }
   
     if (searchQuery) {
-      url = `http://localhost:5000/searchquestions?query=${searchQuery}`;
+      url = apiUrl(`/searchquestions?query=${searchQuery}`);
     }
   
     fetch(url)
@@ -34,8 +39,13 @@ function MainView({ selectedChannelId }) {
         } else {
           setQuestions(data);
         }
+        setLoading(false);
       })
-      .catch((err) => console.error('Error fetching questions:', err));
+      .catch((err) => {
+        console.error('Error fetching questions:', err);
+        setError('We could not load questions right now.');
+        setLoading(false);
+      });
   }, [selectedChannelId, searchQuery]);
 
   const handleSearch = (event) => {
@@ -61,46 +71,61 @@ function MainView({ selectedChannelId }) {
   };
 
   const handleQuestionCreated = () => {
-    fetchQuestions(); // Refresh questions after creation
-    setActiveView('questions'); // Go back to the question list
+    fetchQuestions();
+    setActiveView('questions');
   };
 
+  const visibleQuestions = searchQuery ? searchResults : questions;
+
   return (
-    <main style={{ flex: 1, backgroundColor: 'white', padding: '10px' }}>
+    <main className="main-panel">
       {activeView === 'questions' && (
       <>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>
-            Questions
-          </h2>
-          <input
-            type="text"
-            placeholder="Search questions..."
-            value={searchQuery}
-            onChange={handleSearch}
-            style={{ padding: '8px', fontSize: '16px', marginRight: '10px' }}
-          />
-          <button onClick={handleAskQuestionClick}>Ask Question</button>
+        <div className="toolbar">
+          <div className="toolbar-copy">
+            <h2 className="section-title">Questions</h2>
+            <p className="helper-text">
+              {selectedChannelId
+                ? 'You are browsing a single channel. Ask a question here or search across its threads.'
+                : 'Select a channel to narrow the discussion, or browse everything as a guest.'}
+            </p>
+          </div>
+          <div className="toolbar-actions">
+            <input
+              className="search-input"
+              type="text"
+              placeholder="Search questions..."
+              value={searchQuery}
+              onChange={handleSearch}
+            />
+            <button className="primary-button" onClick={handleAskQuestionClick} disabled={!selectedChannelId}>Ask Question</button>
+          </div>
         </div>
+        {error && <p className="error-text">{error}</p>}
+        {loading ? <p>Loading questions...</p> : null}
+        {!loading && !error && visibleQuestions.length === 0 ? <p>No questions found yet.</p> : null}
         <QuestionsList
           onQuestionClick={handleQuestionClick}
-          questions={searchQuery ? searchResults : questions}
+          questions={visibleQuestions}
         />
       </>
     )}
 
       {activeView === 'question' && (
         <>
-          <button onClick={handleBackToQuestions}>Back to Questions</button>
+          <div className="detail-actions">
+            <button className="ghost-button" onClick={handleBackToQuestions}>Back to Questions</button>
+          </div>
           <QuestionPage questionId={selectedQuestion} />
         </>
       )}
 
       {activeView === 'askQuestionForm' && selectedChannelId && (
         <>
-          <button onClick={handleBackToQuestions}>Back to Questions</button>
-          {console.log('MainView: selectedChannelId = ', selectedChannelId)} 
-          <QuestionForm onQuestionCreated={handleQuestionCreated} channelId={selectedChannelId}/> {/* Callback for question creation */}
+          <div className="detail-actions">
+            <button className="ghost-button" onClick={handleBackToQuestions}>Back to Questions</button>
+          </div>
+          <QuestionForm onQuestionCreated={handleQuestionCreated} channelId={selectedChannelId}/>
         </>
       )}
     </main>

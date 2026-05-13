@@ -1,7 +1,8 @@
 // LoginForm.js
 import React, { useState } from 'react';
+import { apiUrl } from './api';
 
-function LoginForm({ onLoginSuccess }) {
+function LoginForm({ onLoginSuccess, onCancel }) {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
@@ -10,7 +11,7 @@ function LoginForm({ onLoginSuccess }) {
       event.preventDefault();
   
       try {
-        const response = await fetch('http://localhost:5000/login', {
+        const response = await fetch(apiUrl('/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, password }),
@@ -29,19 +30,25 @@ function LoginForm({ onLoginSuccess }) {
       }
     };
   return (
-    <div style={{ maxWidth: '400px', margin: 'auto', padding: '20px', border: '1px solid #ccc', borderRadius: '5px' }}>
-      <h2>Login</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
-          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+    <div className="form-card auth-modal">
+      <div className="form-header">
+        <h2 className="form-title">Sign In</h2>
+        <button className="ghost-button" type="button" onClick={onCancel}>Close</button>
+      </div>
+      <p className="form-copy">
+        Signing in is optional. It lets you vote and post under your saved identity.
+      </p>
+      {error && <p className="error-text">{error}</p>}
+      <form className="form-stack" onSubmit={handleSubmit}>
+        <div className="form-field">
+          <label>Username</label>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
         </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Password:</label>
-          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required style={{ width: '100%', padding: '8px' }} />
+        <div className="form-field">
+          <label>Password</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </div>
-        <button type="submit" style={{ padding: '10px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>Login</button>
+        <button className="primary-button" type="submit">Sign In</button>
       </form>
     </div>
   );

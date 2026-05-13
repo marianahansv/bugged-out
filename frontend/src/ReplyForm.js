@@ -10,15 +10,15 @@ function ReplyForm({ onSubmit, parentReplyId }) { // Added parentReplyId prop
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="form-stack reply-form" onSubmit={handleSubmit}>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="Write your reply..."
-        style={{ width: '100%', padding: '8px', fontSize: '16px', minHeight: '80px', marginBottom: '10px' }}
+        className="reply-textarea"
         required
       />
-      <button type="submit" style={{ padding: '8px 16px', fontSize: '14px' }}>
+      <button className="primary-button" type="submit">
         Post Reply
       </button>
     </form>
