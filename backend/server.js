@@ -21,6 +21,7 @@
  *   - search
  */
 
+import rateLimit from 'express-rate-limit'
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -40,12 +41,17 @@ const {
   listReplies,
   searchQuestions,
 } = require('./repositories/forumRepository');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 100 
+})
 
 const app = express();
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(limiter)
 
 async function startServer() {
   try {

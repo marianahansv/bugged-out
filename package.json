@@ -8,5 +8,8 @@
     "dev:backend": "cd backend && bun run dev",
     "dev:frontend": "cd frontend && REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:5001} bun run dev",
     "build": "cd frontend && bun run build"
+  },
+  "dependencies": {
+    "express-rate-limit": "^8.5.2"
   }
 }
