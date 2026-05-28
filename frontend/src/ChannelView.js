@@ -70,7 +70,7 @@ function ChannelView({ onChannelClick }) {
             <div className="section-header">
                 <div>
                     <h2 className="section-title">Channels</h2>
-                    <p className="helper-text sidebar-copy">Pick a topic lane before starting a thread.</p>
+                    <p className="helper-text sidebar-copy">Pick a topic before starting a thread.</p>
                 </div>
                 <button className="ghost-button" onClick={() => setShowAddChannelForm(true)}>+</button>
             </div>

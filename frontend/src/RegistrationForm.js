@@ -41,7 +41,7 @@ function RegistrationForm({ onRegistrationSuccess, onCancel }) {
         <button className="ghost-button" type="button" onClick={onCancel}>Close</button>
       </div>
       <p className="form-copy">
-        Create an account if you want a persistent identity for your posts and access to voting.
+        Create an account if you want an identity for your posts and access to voting.
       </p>
       {error && <p className="error-text">{error}</p>}
       <form className="form-stack" onSubmit={handleSubmit}>

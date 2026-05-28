@@ -20,9 +20,6 @@ function QuestionsList({ onQuestionClick, questions }) {
             </h3>
             <span className="question-tag">thread</span>
           </div>
-          {question.image_url && ( // Display image if available
-            <img className="question-image" src={apiUrl(question.image_url)} alt={question.title} />
-          )}
           <p className="question-excerpt">
             {question.content}
           </p>

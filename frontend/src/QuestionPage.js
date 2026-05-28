@@ -195,7 +195,11 @@ function QuestionPage({ questionId }) {
         Asked {formatDistanceToNow(new Date(question.timestamp), { addSuffix: true })} by {question.author}
       </div>
       {question.image_url && (
-        <img className="detail-image" src={apiUrl(question.image_url)} alt={question.title} />
+        <img 
+          className="detail-image" 
+          src={apiUrl(question.image_url)} 
+          alt={question.title}         
+          />
       )}
       <p className="detail-content">
         {question.content}

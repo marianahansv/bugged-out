@@ -1,7 +1,6 @@
 // coordinates the main buggedout application shell.
 // this file manages authentication state, channel selection, layout, and auth modals.
 
-// App.js
 import React, { useState, useEffect } from 'react';
 import MainView from './MainView';
 import ChannelView from './ChannelView';
@@ -96,7 +95,7 @@ function App() {
         </div>
 
         <footer className="footer">
-          <p>© 2025 BuggedOut. All rights reserved. By Mariana Hans</p>
+          <p>© 2025 BuggedOut. All rights reserved. By Mariana Hans :&#41;</p>
         </footer>
       </div>
     </div>

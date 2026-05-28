@@ -356,8 +356,10 @@ textarea:focus {
 }
 
 .detail-image {
-  max-height: 14rem;
-  margin: 0.45rem 0 0.7rem;
+  display: block;
+  max-width: 60%;
+  height:auto;
+  margin: 0.45rem auto 0.7rem;
 }
 
 .vote-row {
