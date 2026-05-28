@@ -15,6 +15,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "dev": "bunx react-scripts start",
     "start": "bunx react-scripts start",
     "build": "bunx react-scripts build",
     "test": "bunx react-scripts test",

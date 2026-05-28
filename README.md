@@ -16,16 +16,6 @@ BuggedOut is a lightweight Q&A forum built with React, Bun, Express, and MySQL. 
 - Backend: Bun, Express, MySQL, multer, JWT
 - Database: MySQL
 
-## Project structure
-
-- `frontend/`: React client
-- `backend/`: Express API, MySQL bootstrap, repository layer, seeding, uploads
-- `backend/config.js`: environment-driven server and DB configuration
-- `backend/auth.js`: password hashing helpers shared by runtime and seed script
-- `backend/db.js`: database bootstrap and pool lifecycle
-- `backend/schema.js`: table creation
-- `backend/repositories/forumRepository.js`: forum-specific queries
-- `docs/architecture.md`: storage and system design notes
 
 ## Requirements
 
@@ -71,7 +61,7 @@ This project should keep a database. Forum apps need durable storage for posts, 
 - Current choice: MySQL
 - Simpler portfolio alternative: SQLite
 
-The reasoning and tradeoffs are documented in [docs/architecture.md](/Users/marianahans/Downloads/project/docs/architecture.md).
+The main tradeoff is setup complexity versus realism: MySQL requires a local server, but it also shows a relational design that matches forum data well.
 
 ## Seed demo data
 
