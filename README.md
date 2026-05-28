@@ -54,6 +54,15 @@ Default local URLs:
 
 The backend creates the configured database automatically when it starts, so as long as MySQL itself is running, you do not need to create `forumdb` manually.
 
+## Run Frontend Tests
+
+From the project root:
+
+```bash
+cd frontend
+bun test
+```
+
 ## Storage choice
 
 This project should keep a database. Forum apps need durable storage for posts, replies, channels, and user state, and a relational model fits that data naturally.
