@@ -1,94 +1,79 @@
 # BuggedOut
+BuggedOut is a Q&A forum app where users can browse channels, post questions, reply in threads, and search across content. 
+*built for CMPT 353 (full stack development) @usask*
 
-BuggedOut is a lightweight Q&A forum built with React, Bun, Express, and MySQL. Users can browse channels, ask questions, upload screenshots, reply in threads, and search existing content. Authentication is optional for exploration, which makes the app easy to demo in a portfolio setting.
+## features
+- browse and post in topic channels
+- upload pictures for reference
+- reply in nested threads
+- search existing content
+- guest-friendly! no account required to explore
 
-## Portfolio highlights
+## screenshots
+*(coming soon once I finish updating the style)*
 
-- Full-stack app with a React frontend and Express/MySQL backend
-- Bun-based local workflow instead of Docker
-- Automatic database creation on backend startup
-- Demo data seeding for quick reviewer onboarding
-- Guest-friendly browsing flow with optional account login
+## tech stack
+- frontend: React, Create React App, date-fns
+- backend: Bun, Express, MySQL, multer, JWT
+- database: MySQL
 
-## Tech stack
-
-- Frontend: React, Create React App, date-fns
-- Backend: Bun, Express, MySQL, multer, JWT
-- Database: MySQL
-
-
-## Requirements
-
+## requirements
 - [Bun](https://bun.sh/)
-- A local MySQL server
+- a local MySQL server
 
-## Setup
-
-1. Copy `backend/.env.example` to `backend/.env`.
-2. Update the values in `backend/.env` to match your local MySQL setup.
-3. Install dependencies:
-
+## how to run?
 ```bash
+# 1. copy the env file
+cp backend/.env.example backend/.env
+
+# 2. update backend/.env with your local MySQL credentials
+
+# 3. install dependencies
 bun run install:all
-```
 
-## Run locally
-
-Start both apps:
-
-```bash
+# 4. start both apps
 bun run dev
 ```
 
-Or run them separately:
-
+or run them separately:
 ```bash
 bun run dev:backend
 bun run dev:frontend
 ```
 
-Default local URLs:
+default local URLs:
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:5001`
 
-- Frontend: `http://localhost:3000`
-- Backend: `http://localhost:5001`
+the backend creates the database automatically on startup — as long as MySQL is running, you don't need to create `forumdb` manually.
 
-The backend creates the configured database automatically when it starts, so as long as MySQL itself is running, you do not need to create `forumdb` manually.
+## seed demo data
+```bash
+cd backend
+bun run seed
+```
+this populates the app with sample users, channels, questions, and replies so it's ready to review right away.
 
-## Run Frontend Tests
-
-From the project root:
-
+## run tests
 ```bash
 cd frontend
 bun test
 ```
 
-## Storage choice
-
-This project should keep a database. Forum apps need durable storage for posts, replies, channels, and user state, and a relational model fits that data naturally.
-
-- Current choice: MySQL
-- Simpler portfolio alternative: SQLite
-
-The main tradeoff is setup complexity versus realism: MySQL requires a local server, but it also shows a relational design that matches forum data well.
-
-## Seed demo data
-
-```bash
-cd backend
-bun run seed
-```
-
-This creates sample users, channels, questions, and replies to make the app easier to review.
-
-## Build
-
+## build
 ```bash
 bun run build
 ```
 
-## Known limitations
+## a note on hosting
+the backend is real (Express + MySQL), so hosting it fully requires a platform that supports Node/Bun backends — something like Railway or Render works. the frontend can be deployed to Vercel or Netlify separately and pointed at the hosted backend.
 
-- Uploaded files are stored locally in `backend/uploads/`, which is fine for local demos but should be replaced with object storage for production hosting.
-- The backend now has a cleaner config/db/repository split, but the HTTP route layer still lives in one file and could be separated further into route modules.
-- The UI theme is centralized, but some component-level layout choices still live inline and could be extracted into smaller presentational components over time.
+uploaded files are stored locally in `backend/uploads/`, which is fine for demos but would need to move to object storage (like S3) for a real production deploy.
+
+## known limitations
+- the HTTP route layer lives in one file — it works, but splitting it into route modules would clean things up
+- some component-level layout choices are still inline and could be pulled into smaller presentational components
+- file uploads are local-only (see above)
+
+## a little story
+this was my final project for CMPT 353 at USask. the brief was to build a full-stack app, so i made a forum — because forums are genuinely useful and gave me a chance to think through relational data, auth, file handling, and search all at once. i used Bun instead of Docker to keep the local workflow lighter, which i'd probably do again.
