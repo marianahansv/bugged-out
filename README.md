@@ -18,11 +18,6 @@ BuggedOut is a Q&A forum app where users can browse channels, post questions, re
 - backend: Bun, Express
 - database: MySQL
 
-## a note on hosting
-the backend is real (Express + MySQL), so hosting it fully requires a platform that supports Node/Bun backends — something like Railway or Render works. the frontend can be deployed to Vercel or Netlify separately and pointed at the hosted backend.
-
-uploaded files are stored locally in `backend/uploads/`, which is fine for demos but would need to move to object storage (like S3) for a real production deploy.
-
 ## known limitations
 - the HTTP route layer lives in one file — it works, but splitting it into route modules would clean things up
 - some component-level layout choices are still inline and could be pulled into smaller components
