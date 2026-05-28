@@ -1,3 +1,6 @@
+// displays the list of forum questions.
+// this file renders clickable question cards with metadata, excerpts, and images.
+
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { apiUrl } from './api';

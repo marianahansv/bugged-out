@@ -1,3 +1,6 @@
+// displays available forum channels.
+// this file renders selectable channel items and marks the active channel.
+
 import React from 'react';
 
 function ChannelList({ channels, onChannelClick, selectedChannelId  }) {

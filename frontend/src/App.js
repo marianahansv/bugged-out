@@ -1,3 +1,6 @@
+// coordinates the main buggedout application shell.
+// this file manages authentication state, channel selection, layout, and auth modals.
+
 // App.js
 import React, { useState, useEffect } from 'react';
 import MainView from './MainView';
@@ -61,7 +64,7 @@ function App() {
           <div className="app-brand">
             <h1>BuggedOut 🐞</h1>
             <p className="app-subtitle">
-              Ask questions, share fixes, and explore the forum without creating an account.
+              Ask questions, share answers, and explore the forum.
             </p>
           </div>
           {isAuthenticated ? (
@@ -80,7 +83,7 @@ function App() {
 
         {!isAuthenticated && (
           <div className="guest-banner">
-            Guest mode is enabled. You can browse, ask questions, and reply right away. Voting is reserved for signed-in users.
+            Guest mode is enabled. You can browse, ask questions, and reply. Voting is reserved for signed-in users.
           </div>
         )}
 
@@ -93,7 +96,7 @@ function App() {
         </div>
 
         <footer className="footer">
-          <p>© 2025 BuggedOut. All rights reserved.</p>
+          <p>© 2025 BuggedOut. All rights reserved. By Mariana Hans</p>
         </footer>
       </div>
     </div>

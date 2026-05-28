@@ -1,3 +1,7 @@
+// controls the main question workspace.
+// this file loads questions, handles search, switches between list/detail/form views,
+// and passes selected question data into the detail page.
+
 import React, { useState, useEffect, useCallback} from 'react';
 import QuestionsList from './QuestionsList';
 import QuestionPage from './QuestionPage';
@@ -23,7 +27,7 @@ function MainView({ selectedChannelId }) {
     }
   
     if (searchQuery) {
-      url = apiUrl(`/searchquestions?query=${searchQuery}`);
+      url = apiUrl(`/searchquestions?query=${encodeURIComponent(searchQuery)}`);
     }
   
     fetch(url)

@@ -1,3 +1,14 @@
+/**
+ * defines the relational database schema for the forum and creates 
+ * the database tables required for the forum application.
+ * - users
+ * - channels
+ * - questions
+ * - replies
+ * - ratings
+ * relationships between tables are enforced using foreign keys.
+ */
+
 async function createTables(pool) {
   const connection = await pool.getConnection();
 
@@ -72,4 +83,3 @@ async function createTables(pool) {
 module.exports = {
   createTables,
 };
-

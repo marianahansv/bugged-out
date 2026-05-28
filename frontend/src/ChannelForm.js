@@ -1,10 +1,13 @@
+// provides the small form for creating a channel.
+// this file captures the new channel name and submits it to the sidebar container.
+
 import React, { useState } from 'react';
 
 function ChannelForm({ onSubmit }) {
   const [newChannelName, setNewChannelName] = useState('');
 
   const handleSubmit = (event) => {
-    event.preventDefault();
+    event?.preventDefault();
     onSubmit(newChannelName);
     setNewChannelName('');
   };

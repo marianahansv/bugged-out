@@ -1,3 +1,15 @@
+/**
+ * populates the forum database with demo users, channels,
+ * questions, and replies for demo and testing purposes.
+ * 
+ * this file:
+ * - clears existing demo forum data
+ * - creates sample users
+ * - creates forum channels
+ * - inserts sample questions and replies
+ * - uses transactions to ensure database consistency
+ */
+
 const mysql = require('mysql2/promise');
 const { dbConfig } = require('./config');
 const { hashPassword } = require('./auth');

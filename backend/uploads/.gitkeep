@@ -1,1 +1,2 @@
-
+# keeps the uploads directory available after cloning the repository.
+# uploaded demo files are ignored so local screenshots do not get committed.

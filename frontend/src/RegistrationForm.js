@@ -1,3 +1,6 @@
+// provides the account creation modal.
+// this file collects username, password, and display name, then calls the register api.
+
 // RegistrationForm.js
 import React, { useState } from 'react';
 import { apiUrl } from './api';

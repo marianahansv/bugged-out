@@ -1,3 +1,15 @@
+/**
+ * handles all database operations related to the forum system.
+ * this includes:
+ * - channels
+ * - questions/posts
+ * - replies/comments
+ * - question searching
+ *
+ * each function interacts directly with the mySQL database using 
+ * the provided connection pool.
+ */
+
 async function listChannels(pool) {
   const [results] = await pool.execute('SELECT * FROM channels ORDER BY channel_name ASC');
   return results;
@@ -101,4 +113,3 @@ module.exports = {
   listReplies,
   searchQuestions,
 };
-

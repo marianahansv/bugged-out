@@ -1,3 +1,6 @@
+// manages the sidebar channel experience.
+// this file loads channels, tracks the selected channel, and shows the add-channel form.
+
 import React, { useState, useEffect, useCallback } from 'react';
 import ChannelList from './ChannelList';
 import ChannelForm from './ChannelForm';

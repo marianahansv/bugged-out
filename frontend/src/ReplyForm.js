@@ -1,3 +1,7 @@
+// provides the form for creating replies.
+// this file handles top-level answers and nested replies by passing content
+// and an optional parent reply id back to the question page.
+
 import React, { useState } from 'react';
 
 function ReplyForm({ onSubmit, parentReplyId }) { // Added parentReplyId prop

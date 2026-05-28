@@ -1,3 +1,5 @@
+// this file contains the backend base url and a helper for building endpoint urls.
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
 
 export function apiUrl(path) {

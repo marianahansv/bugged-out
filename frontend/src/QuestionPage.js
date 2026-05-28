@@ -1,3 +1,7 @@
+// renders a single question thread.
+// this file loads question details, builds nested replies, submits answers,
+// and handles authenticated voting for the selected question.
+
 import React, { useState, useEffect } from 'react';
 import ReplyForm from './ReplyForm';
 import { formatDistanceToNow } from 'date-fns';

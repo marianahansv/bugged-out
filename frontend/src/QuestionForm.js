@@ -1,3 +1,6 @@
+// provides the form for creating a new question.
+// this file collects title, content, optional image uploads, and posts them to the api.
+
 import React, { useState } from 'react';
 import { apiUrl } from './api';
 

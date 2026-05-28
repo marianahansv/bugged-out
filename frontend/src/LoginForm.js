@@ -1,3 +1,7 @@
+// provides the sign-in modal.
+// this file collects credentials, calls the login endpoint, and returns the token
+// plus user details to the app shell.
+
 // LoginForm.js
 import React, { useState } from 'react';
 import { apiUrl } from './api';

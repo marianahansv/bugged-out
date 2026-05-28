@@ -1,13 +1,19 @@
+/**
+ * manages mysql startup and connection pooling for the backend.
+ * this file creates the configured database if needed and exposes the shared pool
+ * used by route handlers, schema setup, and repository queries.
+ */
+
 const mysql = require('mysql2/promise');
 const { dbConfig } = require('./config');
 
 let pool;
 
 /**
-  Initializes the database:
-    1. Connects to MySQL server
-    2. Creates the database if it doesn't exist
-    3. Creates a connection pool for future queries
+  initializes the database:
+    1. connects to MySQL server
+    2. creates the database if it doesn't exist
+    3. creates a connection pool for future queries
  */
 async function initializeDatabase() {
   const connection = await mysql.createConnection({
@@ -30,8 +36,8 @@ async function initializeDatabase() {
 }
 
 /**
-  Returns the initialized pool.
-  Throws an error if initializeDatabase() hasn't been called yet.
+  returns the initialized pool.
+  throws an error if initializeDatabase() hasn't been called yet.
  */
 function getPool() {
   if (!pool) {
@@ -45,4 +51,3 @@ module.exports = {
   initializeDatabase,
   getPool,
 };
-

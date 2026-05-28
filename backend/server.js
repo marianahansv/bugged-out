@@ -1,3 +1,26 @@
+/**
+ * starts the express api for the buggedout forum.
+ * this file configures middleware, uploads, authentication, database startup,
+ * and all http endpoints used by the react frontend.
+ *
+ * main backend server file for the forum application.
+ *
+ * this file:
+ * - initializes the Express server
+ * - connects to the mySQL database
+ * - creates database tables
+ * - configures middleware
+ * - handles authentication using JWT
+ * - supports file uploads with multer
+ * - defines API endpoints for:
+ *   - channels
+ *   - questions
+ *   - replies
+ *   - ratings
+ *   - user authentication
+ *   - search
+ */
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -276,29 +299,26 @@ app.post('/rate_question', attachUserIfPresent, async (req, res) => {
       return res.status(401).json({ error: 'Please log in to rate questions.' });
     }
 
-    const connection = await getPool().getConnection();
-    const [existingRating] = await connection.execute(
+    const [existingRating] = await getPool().execute(
       'SELECT * FROM ratings WHERE user_id = ? AND question_id = ? AND type = ?',
       [user_id, question_id, 'question']
     );
 
     if (existingRating.length > 0) {
       // Update existing rating
-      await connection.execute(
+      await getPool().execute(
         'UPDATE ratings SET rating = ? WHERE user_id = ? AND question_id = ? AND type = ?',
         [rating, user_id, question_id, 'question']
       );
       res.json({ message: 'Question rating updated successfully' });
     } else {
       // Insert new rating
-      await connection.execute(
+      await getPool().execute(
         'INSERT INTO ratings (user_id, type, question_id, rating) VALUES (?, ?, ?, ?)',
         [user_id, 'question', question_id, rating]
       );
       res.json({ message: 'Question rating added successfully' });
     }
-
-    connection.release();
   } catch (err) {
     console.error('Error rating question:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -313,12 +333,10 @@ app.get('/get_question_rating', async (req, res) => {
       return res.status(400).json({ error: 'Question ID is required' });
     }
 
-    const connection = await getPool().getConnection();
-    const [results] = await connection.execute(
+    const [results] = await getPool().execute(
       'SELECT SUM(rating) AS total_rating FROM ratings WHERE question_id = ? AND type = ?',
       [question_id, 'question']
     );
-    connection.release();
 
     const total_rating = results[0] ? results[0].total_rating : 0;
     res.json({ question_id, total_rating });
@@ -341,27 +359,24 @@ app.post('/rate_reply', attachUserIfPresent, async (req, res) => {
       return res.status(401).json({ error: 'Please log in to rate replies.' });
     }
 
-    const connection = await getPool().getConnection();
-    const [results] = await connection.execute(
+    const [results] = await getPool().execute(
       'SELECT * FROM ratings WHERE user_id = ? AND reply_id = ?',
       [user_id, reply_id]
     );
 
     if (results.length > 0) {
       // update existing rating
-      await connection.execute(
+      await getPool().execute(
         'UPDATE ratings SET rating = ? WHERE user_id = ? AND reply_id = ?',
         [rating, user_id, reply_id]
       );
-      connection.release();
       res.json({ message: 'Rating updated successfully' });
     } else {
       // insert new rating :)
-      await connection.execute(
+      await getPool().execute(
         'INSERT INTO ratings (user_id, type, reply_id, rating) VALUES (?, ?, ?, ?)',
         [user_id, 'reply', reply_id, rating]
       );
-      connection.release();
       res.json({ message: 'Rating added successfully' });
     }
   } catch (err) {
@@ -379,12 +394,10 @@ app.get('/get_reply_rating', async (req, res) => {
       return res.status(400).json({ error: 'Reply ID is required' });
     }
 
-    const connection = await getPool().getConnection();
-    const [results] = await connection.execute(
+    const [results] = await getPool().execute(
       'SELECT SUM(rating) AS total_rating FROM ratings WHERE reply_id = ?',
       [reply_id]
     );
-    connection.release();
 
     const total_rating = results[0] ? results[0].total_rating : 0;
     res.json({ reply_id, total_rating });
