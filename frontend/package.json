@@ -10,14 +10,15 @@
     "date-fns": "^4.1.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "serve": "^14.2.6"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.3"
   },
   "scripts": {
     "dev": "bunx react-scripts start",
-    "start": "bunx react-scripts start",
+    "start": "serve -s build",
     "build": "bunx react-scripts build",
     "test": "bun test"
   },
