@@ -175,6 +175,7 @@ async function seedDatabase() {
     await connection.beginTransaction();
 
     await connection.execute('DELETE FROM ratings');
+    await connection.execute('UPDATE replies SET parent_reply_id = NULL');
     await connection.execute('DELETE FROM replies');
     await connection.execute('DELETE FROM questions');
     await connection.execute('DELETE FROM channels');
