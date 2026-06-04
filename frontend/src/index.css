@@ -11,8 +11,8 @@
   --border-strong: rgba(0, 0, 0, 0.3); /* Adjusted to new black */
   --text: #000000; /* Pure black for fonts */
   --muted: rgba(0, 0, 0, 0.6); /* Adjusted to new black */
-  --primary-accent: #C4606A; /* Red accent */
-  --primary-accent-soft: rgba(196, 96, 106, 0.06);
+  --primary-accent: #E1000F; /* Brighter Red accent */
+  --primary-accent-soft: rgba(225, 0, 15, 0.06);
   --secondary-accent: #000000; /* Black for secondary accents */
   --secondary-accent-soft: rgba(0, 0, 0, 0.06);
   --danger: #C4606A; /* Red accent */
@@ -37,6 +37,7 @@ body {
   margin: 0;
   color: var(--text);
   font-family: var(--font-sans);
+  font-size: 0.875rem; /* Standardized base font size */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: transparent;
@@ -51,7 +52,8 @@ textarea {
 button {
   border: 1px solid var(--secondary-accent); /* Black border */
   border-radius: var(--radius-sm);
-  padding: 0.5rem 0.8rem; /* Reduced padding */
+  padding: 0.4rem 0.7rem; /* Further reduced padding for compactness */
+  font-size: 0.8rem; /* Consistent smaller button font size */
   background: var(--surface-strong);
   color: var(--text);
   cursor: pointer;
@@ -70,11 +72,12 @@ button:disabled {
 input,
 textarea {
   width: 100%;
-  padding: 0.6rem 0.7rem; /* Reduced padding */
+  padding: 0.5rem 0.6rem; /* Further reduced padding */
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
+  font-size: 0.8rem; /* Consistent smaller input font size */
 }
 
 input:focus,
@@ -123,7 +126,8 @@ textarea:focus {
   margin: 0;
   font-family: var(--font-sans);
   letter-spacing: 0;
-  font-size: 1.5rem; /* Smaller font size for titles */
+  font-size: 1.35rem; /* Slightly smaller for compactness */
+  font-weight: 700; /* Increased font weight for titles */
 }
 
 .app-subtitle,
@@ -134,11 +138,11 @@ textarea:focus {
 }
 
 .app-subtitle {
-  margin: 0.25rem 0 0;
-  max-width: 30rem; /* Adjusted max width */
-  font-size: 0.8rem; /* Smaller font size */
-  color: var(--danger);
-  font-weight: 600;
+  margin: 0.2rem 0 0; /* Reduced margin */
+  max-width: 28rem; /* Adjusted max width */
+  font-size: 0.75rem; /* Smaller font size for subtitle */
+  color: var(--primary-accent); /* Using primary accent red */
+  font-weight: 700; /* Increased font weight */
 }
 
 .app-auth-cluster {
@@ -166,20 +170,20 @@ textarea:focus {
 }
 
 .guest-banner {
-  margin: 0 0 0.6rem; /* Reduced margin */
+  margin: 0 0 0.5rem; /* Further reduced margin */
   border: 1px solid var(--border);
   background: transparent;
   color: var(--muted);
   border-radius: var(--radius-md);
-  padding: 0.6rem 0.7rem; /* Reduced padding */
-  font-size: 0.65rem; /* Smaller font size */
+  padding: 0.5rem 0.6rem; /* Further reduced padding */
+  font-size: 0.7rem; /* Slightly increased for readability */
 }
 
 .app-layout {
   display: grid;
-  grid-template-columns: minmax(14rem, 16rem) minmax(0, 1fr); /* Smaller sidebar, reduced gap */
-  gap: 0.6rem; /* Reduced gap */
-  padding: 0 0 0.8rem; /* Reduced padding */
+  grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr); /* Slightly smaller sidebar width */
+  gap: 0.5rem; /* Further reduced gap */
+  padding: 0 0 0.7rem; /* Reduced padding */
   flex: 1;
 }
 
@@ -195,7 +199,7 @@ textarea:focus {
 
 .sidebar,
 .main-panel {
-  padding: 0.7rem; /* Reduced padding */
+  padding: 0.6rem; /* Further reduced padding */
 }
 
 .sidebar {
@@ -217,13 +221,13 @@ textarea:focus {
 }
 
 .section-header {
-  margin-bottom: 0.8rem; /* Reduced margin */
+  margin-bottom: 0.6rem; /* Further reduced margin */
 }
 
 .section-title {
-  font-size: 0.8rem; /* Smaller font size */
+  font-size: 0.75rem; /* Consistent smaller font size */
   text-transform: uppercase;
-  font-weight: 650;
+  font-weight: 700; /* Increased font weight */
 }
 
 .sidebar-copy {
@@ -249,9 +253,10 @@ textarea:focus {
 }
 
 .channel-item {
-  padding: 0.6rem 0; /* Reduced padding */
+  padding: 0.5rem 0; /* Further reduced padding */
   cursor: pointer;
   transition: background 140ms ease, border-color 140ms ease;
+  font-size: 0.8rem; /* Consistent smaller font size */
 }
 
 .channel-item:hover,
@@ -267,9 +272,9 @@ textarea:focus {
 }
 
 .toolbar {
-  margin-bottom: 0.8rem; /* Reduced margin */
+  margin-bottom: 0.6rem; /* Reduced margin */
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center; /* Align items vertically */
 }
 
 .toolbar-copy {
@@ -278,25 +283,26 @@ textarea:focus {
 }
 
 .toolbar-copy .helper-text {
-  margin: 0.35rem 0 0; /* Reduced margin */
-  max-width: 34rem; /* Reduced max width */
+  margin: 0.25rem 0 0; /* Reduced margin */
+  max-width: 30rem; /* Reduced max width */
+  font-size: 0.75rem; /* Consistent smaller font size */
 }
 
 .toolbar-actions {
-  flex: 0 1 24rem; /* Adjusted flex basis */
+  flex: 0 1 20rem; /* Adjusted flex basis for more compactness */
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 0.5rem; /* Reduced gap */
+  gap: 0.4rem; /* Further reduced gap */
   flex-wrap: wrap;
 }
 
 .search-input {
-  max-width: 16rem; /* Reduced max width */
+  max-width: 14rem; /* Further reduced max width */
 }
 
 .question-card {
-  padding: 0.7rem 0; /* Reduced padding */
+  padding: 0.6rem 0; /* Further reduced padding */
   cursor: pointer;
 }
 
@@ -305,28 +311,30 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem; /* Reduced gap */
-  margin-bottom: 0.4rem; /* Reduced margin */
+  gap: 0.4rem; /* Further reduced gap */
+  margin-bottom: 0.3rem; /* Further reduced margin */
 }
 
 .question-title {
-  margin: 0 0 0.35rem; /* Reduced margin */
-  font-size: 0.9rem; /* Smaller font size */
+  margin: 0 0 0.25rem; /* Further reduced margin */
+  font-size: 0.875rem; /* Consistent smaller font size */
+  font-weight: 600; /* Increased font weight */
 }
 
 .question-tag {
   border: 1px solid var(--border);
   background: transparent;
-  padding: 0.15rem 0.4rem; /* Reduced padding */
-  font-size: 0.65rem; /* Smaller font size */
+  padding: 0.1rem 0.35rem; /* Further reduced padding */
+  font-size: 0.6rem; /* Smaller font size */
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .question-excerpt {
-  margin: 0.25rem 0 0.6rem; /* Reduced margin */
+  margin: 0.2rem 0 0.5rem; /* Further reduced margin */
   color: var(--text);
-  line-height: 1.5;
+  line-height: 1.4; /* Slightly reduced line height for compactness */
+  font-size: 0.85rem; /* Consistent smaller font size */
 }
 
 .question-image,
@@ -339,16 +347,16 @@ textarea:focus {
 }
 
 .meta-text {
-  font-size: 0.75rem; /* Smaller font size */
+  font-size: 0.7rem; /* Even smaller font size for meta info */
 }
 
 .detail-view {
-  padding: 0.8rem 1rem; /* Reduced padding */
+  padding: 0.7rem 0.9rem; /* Further reduced padding */
 }
 
 .detail-title {
-  font-size: clamp(1.1rem, 1.5vw, 1.5rem); /* Smaller font size */
-  margin-bottom: 0.2rem; /* Reduced margin */
+  font-size: clamp(1.0rem, 1.3vw, 1.35rem); /* Consistent smaller font size */
+  margin-bottom: 0.15rem; /* Further reduced margin */
 }
 
 .detail-content {
@@ -357,7 +365,7 @@ textarea:focus {
 }
 
 .detail-actions {
-  margin-bottom: 0.5rem; /* Reduced margin */
+  margin-bottom: 0.4rem; /* Further reduced margin */
 }
 
 .detail-image {
@@ -370,17 +378,17 @@ textarea:focus {
 .vote-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem; /* Reduced gap */
+  gap: 0.3rem; /* Further reduced gap */
   flex-wrap: wrap;
 }
 
 .vote-chip {
   font-family: var(--font-mono);
-  font-size: 0.8rem; /* Smaller font size */
+  font-size: 0.75rem; /* Consistent smaller font size */
 }
 
 .reply-card {
-  padding: 0.6rem 0; /* Reduced padding */
+  padding: 0.5rem 0; /* Further reduced padding */
 }
 
 .reply-card.is-nested {
@@ -396,56 +404,57 @@ textarea:focus {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 0.5rem; /* Reduced gap */
-  margin-bottom: 0.2rem; /* Reduced margin */
+  gap: 0.4rem; /* Further reduced gap */
+  margin-bottom: 0.15rem; /* Further reduced margin */
 }
 
 .reply-content {
-  margin: 0 0 0.2rem; /* Reduced margin */
+  margin: 0 0 0.15rem; /* Further reduced margin */
+  font-size: 0.85rem; /* Consistent smaller font size */
 }
 
 .reply-link {
-  padding: 0.2rem 0.4rem; /* Reduced padding */
-  font-size: 0.7rem; /* Smaller font size */
+  padding: 0.15rem 0.35rem; /* Further reduced padding */
+  font-size: 0.65rem; /* Consistent smaller font size */
 }
 
 .reply-form {
-  margin-top: 0.4rem; /* Reduced margin */
+  margin-top: 0.3rem; /* Further reduced margin */
 }
 
 .reply-textarea {
-  min-height: 4rem; /* Reduced min-height */
+  min-height: 3.5rem; /* Further reduced min-height */
 }
 
 .form-card {
-  max-width: 24rem; /* Reduced max width */
-  margin: 0.8rem auto; /* Reduced margin */
-  padding: 0.8rem; /* Reduced padding */
+  max-width: 22rem; /* Reduced max width */
+  margin: 0.7rem auto; /* Reduced margin */
+  padding: 0.7rem; /* Reduced padding */
 }
 
 .auth-modal {
   position: fixed;
   inset: 50% auto auto 50%;
   transform: translate(-50%, -50%);
-  width: min(24rem, calc(100vw - 1.2rem)); /* Reduced width */
+  width: min(22rem, calc(100vw - 1.2rem)); /* Reduced width */
   z-index: 3;
 }
 
 .form-copy {
-  margin: 0.3rem 0 0.8rem; /* Reduced margin */
-  font-size: 0.8rem; /* Smaller font size */
+  margin: 0.25rem 0 0.7rem; /* Reduced margin */
+  font-size: 0.75rem; /* Consistent smaller font size */
 }
 
 .form-stack {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem; /* Reduced gap */
+  gap: 0.6rem; /* Reduced gap */
 }
 
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem; /* Reduced gap */
+  gap: 0.3rem; /* Reduced gap */
 }
 
 .error-text {
@@ -454,9 +463,9 @@ textarea:focus {
 }
 
 .footer {
-  padding: 0 0 0.8rem; /* Reduced padding */
+  padding: 0 0 0.7rem; /* Reduced padding */
   color: var(--muted);
-  font-size: 0.75rem; /* Smaller font size */
+  font-size: 0.7rem; /* Consistent smaller font size */
   text-align: center;
 }
 
