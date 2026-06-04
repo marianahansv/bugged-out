@@ -25,13 +25,25 @@ function buildReplyTree(replyItems) {
   return roots;
 }
 
-function QuestionPage({ questionId }) {
+function QuestionPage({ questionId, isAdmin, onQuestionDeleted }) {
   const [question, setQuestion] = useState(null);
   const [replies, setReplies] = useState([]);
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [questionRating, setQuestionRating] = useState(0); 
   const [pageError, setPageError] = useState('');
+
+  const fetchReplies = () => {
+    fetch(apiUrl(`/getreplies?questionId=${questionId}`))
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load replies');
+        }
+        return response.json();
+      })
+      .then(data => setReplies(data))
+      .catch(error => console.error('Error fetching replies:', error));
+  };
 
   useEffect(() => {
     if (questionId) {
@@ -46,18 +58,10 @@ function QuestionPage({ questionId }) {
         .then(data => setQuestion(data))
         .catch(error => {
           console.error('Error fetching question:', error);
-          setPageError('We could not load this question.');
+          setPageError('This question failed to load.');
         });
   
-      fetch(apiUrl(`/getreplies?questionId=${questionId}`))
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Failed to load replies');
-          }
-          return response.json();
-        })
-        .then(data => setReplies(data))
-        .catch(error => console.error('Error fetching replies:', error));
+      fetchReplies();
   
       fetch(apiUrl(`/get_question_rating?question_id=${questionId}`))
         .then((response) => {
@@ -143,6 +147,58 @@ function QuestionPage({ questionId }) {
     }
   };
 
+  const handleDeleteQuestion = async () => {
+    if (!window.confirm('Delete this question?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl(`/questions/${questionId}`), {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      onQuestionDeleted();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      setPageError(error.message);
+    }
+  };
+
+  const handleDeleteReply = async (replyId) => {
+    if (!window.confirm('Delete this reply?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl(`/replies/${replyId}`), {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      fetchReplies();
+    } catch (error) {
+      console.error('Error deleting reply:', error);
+      setPageError(error.message);
+    }
+  };
+
   const replyTree = buildReplyTree(replies);
 
   const renderReplies = (items, depth = 0) =>
@@ -156,15 +212,22 @@ function QuestionPage({ questionId }) {
           <div className="meta-text">
             {reply.author} - {formatDistanceToNow(new Date(reply.timestamp), { addSuffix: true })}
           </div>
-          <button
-            className="ghost-button reply-link"
-            onClick={() => {
-              setShowReplyForm(true);
-              setReplyingTo(reply.id);
-            }}
-          >
-            Reply
-          </button>
+          <div className="reply-actions">
+            <button
+              className="ghost-button reply-link"
+              onClick={() => {
+                setShowReplyForm(true);
+                setReplyingTo(reply.id);
+              }}
+            >
+              Reply
+            </button>
+            {isAdmin && (
+              <button className="ghost-button reply-link danger-button" onClick={() => handleDeleteReply(reply.id)}>
+                Delete
+              </button>
+            )}
+          </div>
         </div>
         <p className="detail-content reply-content">{reply.content}</p>
         {showReplyForm && replyingTo === reply.id && (
@@ -187,6 +250,11 @@ function QuestionPage({ questionId }) {
       {pageError && <p className="error-text">{pageError}</p>}
       <div className="detail-head">
         <span className="question-tag">question</span>
+        {isAdmin && (
+          <button className="ghost-button danger-button" onClick={handleDeleteQuestion}>
+            Delete
+          </button>
+        )}
       </div>
       <h2 className="detail-title">
         {question.title}
@@ -215,7 +283,7 @@ function QuestionPage({ questionId }) {
         <span className="vote-chip">Rating: {questionRating}</span>
       </div>
       <p className="muted-note">
-        Voting is optional-auth only. Guests can still read, ask, and reply.
+        Sign in to vote. Guests can still read, ask, and reply.
       </p>
 
       <h3 className="section-title">

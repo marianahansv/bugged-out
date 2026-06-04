@@ -8,7 +8,7 @@ import QuestionPage from './QuestionPage';
 import QuestionForm from './QuestionForm';
 import { apiUrl } from './api';
 
-function MainView({ selectedChannelId }) {
+function MainView({ selectedChannelId, isAdmin }) {
   const [activeView, setActiveView] = useState('questions');
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -47,7 +47,7 @@ function MainView({ selectedChannelId }) {
       })
       .catch((err) => {
         console.error('Error fetching questions:', err);
-        setError('We could not load questions right now.');
+        setError('Questions failed to load.');
         setLoading(false);
       });
   }, [selectedChannelId, searchQuery]);
@@ -79,6 +79,38 @@ function MainView({ selectedChannelId }) {
     setActiveView('questions');
   };
 
+  const handleQuestionDeleted = () => {
+    fetchQuestions();
+    setActiveView('questions');
+    setSelectedQuestion(null);
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    if (!window.confirm('Delete this question?')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(apiUrl(`/questions/${questionId}`), {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      handleQuestionDeleted();
+    } catch (error) {
+      console.error('Error deleting question:', error);
+      setError(error.message);
+    }
+  };
+
   const visibleQuestions = searchQuery ? searchResults : questions;
 
   return (
@@ -103,7 +135,9 @@ function MainView({ selectedChannelId }) {
         {!loading && !error && visibleQuestions.length === 0 ? <p>No questions found yet.</p> : null}
         <QuestionsList
           onQuestionClick={handleQuestionClick}
+          onQuestionDelete={handleDeleteQuestion}
           questions={visibleQuestions}
+          isAdmin={isAdmin}
         />
       </>
     )}
@@ -113,7 +147,7 @@ function MainView({ selectedChannelId }) {
           <div className="detail-actions">
             <button className="ghost-button" onClick={handleBackToQuestions}>Back to Questions</button>
           </div>
-          <QuestionPage questionId={selectedQuestion} />
+          <QuestionPage questionId={selectedQuestion} isAdmin={isAdmin} onQuestionDeleted={handleQuestionDeleted} />
         </>
       )}
 

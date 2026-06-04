@@ -29,7 +29,7 @@ function ChannelView({ onChannelClick }) {
             })
             .catch((error) => {
                 console.error('Error fetching channels:', error);
-                setError('We could not load channels right now.');
+                setError('Channels failed to load.');
                 setLoading(false);
             });
     }, []);
@@ -61,8 +61,9 @@ function ChannelView({ onChannelClick }) {
     };
 
     const handleChannelClick = (channelId) => {
-        setSelectedChannelId(channelId);
-        onChannelClick(channelId);
+        const nextChannelId = selectedChannelId === channelId ? null : channelId;
+        setSelectedChannelId(nextChannelId);
+        onChannelClick(nextChannelId);
     };
 
     return (

@@ -24,7 +24,7 @@ function LoginForm({ onLoginSuccess, onCancel }) {
         const data = await response.json();
   
         if (response.ok) {
-          onLoginSuccess(data.token, data.user.username, data.user.display_name); // Send token
+          onLoginSuccess(data.token, data.user.username, data.user.display_name, data.user.is_admin); // Send token
         } else {
           setError(data.error || 'Login failed');
         }
@@ -40,7 +40,7 @@ function LoginForm({ onLoginSuccess, onCancel }) {
         <button className="ghost-button" type="button" onClick={onCancel}>Close</button>
       </div>
       <p className="form-copy">
-        Signing in is optional. It lets you vote and post under your saved identity.
+        Sign in to vote and post with your name.
       </p>
       {error && <p className="error-text">{error}</p>}
       <form className="form-stack" onSubmit={handleSubmit}>

@@ -14,6 +14,7 @@ function App() {
   const [showRegister, setShowRegister] = useState(false);
   const [username, setUsername] = useState(localStorage.getItem('username') || '');
   const [displayName, setDisplayName] = useState(localStorage.getItem('display_name') || '');
+  const [isAdmin, setIsAdmin] = useState(localStorage.getItem('is_admin') === 'true');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -26,15 +27,17 @@ function App() {
     setSelectedChannelId(channelId);
   };
 
-  const handleLoginSuccess = (token, username, displayName) => { // Receive token
+  const handleLoginSuccess = (token, username, displayName, isAdminUser) => { // Receive token
     setIsAuthenticated(true);
     setShowLogin(false);
     setShowRegister(false);
     localStorage.setItem('token', token); // Store token
     localStorage.setItem('username', username);
     localStorage.setItem('display_name', displayName);
+    localStorage.setItem('is_admin', String(Boolean(isAdminUser)));
     setUsername(username);
     setDisplayName(displayName);
+    setIsAdmin(Boolean(isAdminUser));
   };
 
   const handleRegistrationSuccess = (registeredUsername) => {
@@ -48,9 +51,11 @@ function App() {
     localStorage.removeItem('user_id');
     localStorage.removeItem('username');
     localStorage.removeItem('display_name');
+    localStorage.removeItem('is_admin');
     setIsAuthenticated(false);
     setUsername('');
     setDisplayName('');
+    setIsAdmin(false);
   };
 
   const isAuthOverlayOpen = showLogin || showRegister;
@@ -63,7 +68,7 @@ function App() {
           <div className="app-brand">
             <h1>BuggedOut 🐞</h1>
             <p className="app-subtitle">
-              Ask questions, share answers, and explore the forum.
+              Ask dev questions and share fixes.
             </p>
           </div>
           {isAuthenticated ? (
@@ -81,7 +86,7 @@ function App() {
 
         {!isAuthenticated && (
           <div className="guest-banner">
-            Guest mode is enabled. You can browse, ask questions, and reply. Voting is reserved for signed-in users.
+            You can browse, ask, and reply as a guest. Sign in to vote.
           </div>
         )}
 
@@ -90,11 +95,11 @@ function App() {
 
         <div className="app-layout">
           <ChannelView onChannelClick={handleChannelClick} />
-          <MainView selectedChannelId={selectedChannelId} />
+          <MainView selectedChannelId={selectedChannelId} isAdmin={isAdmin} />
         </div>
 
         <footer className="footer">
-          <p>© 2025 BuggedOut. All rights reserved. By Mariana Hans :&#41;</p>
+          <p>© 2025 BuggedOut. Mariana Hans :&#41;</p>
         </footer>
       </div>
     </div>

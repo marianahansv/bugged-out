@@ -3,9 +3,8 @@
 
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { apiUrl } from './api';
 
-function QuestionsList({ onQuestionClick, questions }) {
+function QuestionsList({ onQuestionClick, onQuestionDelete, questions, isAdmin }) {
   return (
     <div className="question-list">
       {questions.map((question) => (
@@ -18,7 +17,20 @@ function QuestionsList({ onQuestionClick, questions }) {
             <h3 className="question-title">
               {question.title}
             </h3>
-            <span className="question-tag">thread</span>
+            <div className="question-actions">
+              <span className="question-tag">thread</span>
+              {isAdmin && (
+                <button
+                  className="ghost-button reply-link danger-button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onQuestionDelete(question.id);
+                  }}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
           <p className="question-excerpt">
             {question.content}

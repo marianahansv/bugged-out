@@ -35,6 +35,8 @@ const {
   createChannel,
   createQuestion,
   createReply,
+  deleteQuestion,
+  deleteReply,
   getQuestionById,
   listChannels,
   listQuestions,
@@ -94,6 +96,16 @@ const attachUserIfPresent = (req, res, next) => {
     }
 
     req.user = decoded;
+    next();
+  });
+};
+
+const requireAdmin = (req, res, next) => {
+  attachUserIfPresent(req, res, () => {
+    if (!req.user?.is_admin) {
+      return res.status(403).json({ error: 'Admin access required.' });
+    }
+
     next();
   });
 };
@@ -171,6 +183,22 @@ app.get('/getquestions/:questionId', async (req, res) => {
   }
 });
 
+app.delete('/questions/:questionId', requireAdmin, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const wasDeleted = await deleteQuestion(getPool(), questionId);
+
+    if (!wasDeleted) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    res.json({ message: 'Question deleted' });
+  } catch (err) {
+    console.error('Error deleting question:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 //get all questions in the specified channel
 app.get('/getquestions', async (req, res) => {
   try {
@@ -231,6 +259,22 @@ app.get('/getreplies', async (req, res) => {
   }
 });
 
+app.delete('/replies/:replyId', requireAdmin, async (req, res) => {
+  try {
+    const { replyId } = req.params;
+    const wasDeleted = await deleteReply(getPool(), replyId);
+
+    if (!wasDeleted) {
+      return res.status(404).json({ error: 'Reply not found' });
+    }
+
+    res.json({ message: 'Reply deleted' });
+  } catch (err) {
+    console.error('Error deleting reply:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 //========user registration endpoints=========================================
 app.post('/register', async (req, res) => {
   const { username, password, display_name } = req.body;
@@ -277,7 +321,7 @@ app.post('/login', async (req, res) => {
 
     if (passwordMatch) {
       // Generate a JWT
-      const token = jwt.sign({ id: user.id, username: user.username, display_name: user.display_name }, jwtSecret, {
+      const token = jwt.sign({ id: user.id, username: user.username, display_name: user.display_name, is_admin: Boolean(user.is_admin) }, jwtSecret, {
         expiresIn: '1h',
       });
       const { id, username, display_name, avatar_url, is_admin } = user;

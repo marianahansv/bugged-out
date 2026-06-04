@@ -54,7 +54,7 @@ function QuestionForm({ onQuestionCreated, channelId }) {
   return (
     <div className="form-card">
       <h2 className="form-title">Ask a Question</h2>
-      <p className="form-copy">Use the selected channel to keep the discussion organized and easy to review.</p>
+      <p className="form-copy">Post this in the selected channel.</p>
       <form className="form-stack" onSubmit={handleSubmit}>
         {error && <p className="error-text">{error}</p>}
         <div className="form-field">

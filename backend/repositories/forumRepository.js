@@ -43,6 +43,37 @@ async function getQuestionById(pool, questionId) {
   return results[0] ?? null;
 }
 
+async function deleteQuestion(pool, questionId) {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [replyRows] = await connection.execute(
+      'SELECT id FROM replies WHERE question_id = ?',
+      [questionId]
+    );
+    const replyIds = replyRows.map((reply) => reply.id);
+
+    if (replyIds.length > 0) {
+      await connection.query('DELETE FROM ratings WHERE reply_id IN (?)', [replyIds]);
+      await connection.execute('UPDATE replies SET parent_reply_id = NULL WHERE question_id = ?', [questionId]);
+    }
+
+    await connection.execute('DELETE FROM ratings WHERE question_id = ?', [questionId]);
+    await connection.execute('DELETE FROM replies WHERE question_id = ?', [questionId]);
+    const [result] = await connection.execute('DELETE FROM questions WHERE id = ?', [questionId]);
+
+    await connection.commit();
+    return result.affectedRows > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 async function listQuestions(pool, channelId) {
   let query = `SELECT q.*, COALESCE(u.display_name, 'Anonymous') AS author
     FROM questions q
@@ -103,10 +134,52 @@ async function listReplies(pool, questionId) {
   return results;
 }
 
+async function deleteReply(pool, replyId) {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const [replyRows] = await connection.execute('SELECT id FROM replies WHERE id = ?', [replyId]);
+    if (replyRows.length === 0) {
+      await connection.rollback();
+      return false;
+    }
+
+    const idsToDelete = [Number(replyId)];
+    let currentParentIds = [Number(replyId)];
+
+    while (currentParentIds.length > 0) {
+      const [children] = await connection.query(
+        'SELECT id FROM replies WHERE parent_reply_id IN (?)',
+        [currentParentIds]
+      );
+      currentParentIds = children.map((reply) => reply.id);
+      idsToDelete.push(...currentParentIds);
+    }
+
+    await connection.query('DELETE FROM ratings WHERE reply_id IN (?)', [idsToDelete]);
+
+    for (const id of [...idsToDelete].reverse()) {
+      await connection.execute('DELETE FROM replies WHERE id = ?', [id]);
+    }
+
+    await connection.commit();
+    return idsToDelete.length > 0;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
   createChannel,
   createQuestion,
   createReply,
+  deleteQuestion,
+  deleteReply,
   getQuestionById,
   listChannels,
   listQuestions,
