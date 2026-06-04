@@ -17,6 +17,3 @@ BuggedOut is a Q&A forum app where users can browse channels, post questions, re
 - frontend: React
 - backend: Bun, Express
 - database: MySQL
-
-## a little story
-this was a uni project but I wanted to come back and give it a makeover (at the time I had no design experience so it was pretty barebones)!!

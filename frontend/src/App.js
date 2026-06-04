@@ -99,7 +99,7 @@ function App() {
         </div>
 
         <footer className="footer">
-          <p>© 2025 BuggedOut. Mariana Hans :&#41;</p>
+          <p>© 2025 BuggedOut by Mariana Hans :&#41;</p>
         </footer>
       </div>
     </div>
