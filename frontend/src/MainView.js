@@ -86,14 +86,7 @@ function MainView({ selectedChannelId }) {
       {activeView === 'questions' && (
       <>
         <div className="toolbar">
-          <div className="toolbar-copy">
-            <h2 className="section-title">Questions</h2>
-            <p className="helper-text">
-              {selectedChannelId
-                ? 'You are browsing a single channel. Ask a question here or search across its threads.'
-                : 'Select a channel to narrow the discussion, or browse everything as a guest.'}
-            </p>
-          </div>
+          <h2 className="section-title">Questions</h2>
           <div className="toolbar-actions">
             <input
               className="search-input"

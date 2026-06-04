@@ -13,6 +13,7 @@ backend/.env
 frontend/.env
 
 .aider.conf.yml
+CONVENTIONS.md
 
 .DS_Store
 *.log

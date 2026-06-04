@@ -73,7 +73,6 @@ function App() {
             </div>
           ) : (
             <div className="app-auth-cluster">
-              <span className="muted-note">Optional: sign in to vote and keep your identity.</span>
               <button className="ghost-button" onClick={() => { setShowRegister(false); setShowLogin(true); }}>Sign In</button>
               <button className="primary-button" onClick={() => { setShowLogin(false); setShowRegister(true); }}>Create Account</button>
             </div>
