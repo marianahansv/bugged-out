@@ -52,7 +52,7 @@ textarea {
 button {
   border: 1px solid var(--secondary-accent); /* Black border */
   border-radius: var(--radius-sm);
-  padding: 0.4rem 0.7rem; /* Further reduced padding for compactness */
+  padding: 0.5rem 0.7rem; /* Adjusted padding to match input height for consistent vertical alignment */
   font-size: 0.8rem; /* Consistent smaller button font size */
   background: var(--surface-strong);
   color: var(--text);
@@ -274,7 +274,7 @@ textarea:focus {
 .toolbar {
   margin-bottom: 0.6rem; /* Reduced margin */
   flex-wrap: wrap;
-  align-items: center; /* Align items vertically */
+  align-items: flex-start; /* Align items to the top for better header/input alignment */
 }
 
 .toolbar-copy {
